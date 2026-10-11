@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="artwork/slow/null-signal/review.gif" width="128" alt="Null Signal thinking">
+<img src="artwork/natural/null-signal/review.gif" width="128" alt="Null Signal thinking">
 
 # Codex Discord RPC
 
@@ -52,7 +52,7 @@ Project: My App  |  +400 −50
 - **Project:** only the directory's final name. Generated projectless chat folder names are hidden.
 - **Git:** staged + unstaged tracked changes against HEAD. Counts refresh at most every 10 seconds. After committing, `Git clean` replaces `+0 −0`. Untracked and binary files are not counted; unavailable totals are omitted.
 - **Companion:** the selected built-in pet, the last remembered pet when disabled, or the default Codex pet. No need to enable pets in Codex.
-- **ChatGPT badge:** the official black-on-white ChatGPT app icon appears in the lower-right corner of the companion image.
+- **ChatGPT badge:** a small white ChatGPT mark on a fully transparent background appears in the lower-right corner of the companion image.
 
 Two projects running? The first active project keeps the card until it finishes. Then the next takes over. **No cycling between projects.** Real projects take priority over projectless chats, including when a project starts a follow-up task. A second publisher cannot compete with the first.
 
@@ -60,11 +60,11 @@ Discord controls the card's fonts and layout. The name cannot be moved into the 
 
 ## A companion for every state
 
-Original Codex animation frames, played at **half speed** for calmer motion.
+Original Codex animation frames with **native application timing**. No artificial speed-up or half-speed slowdown.
 
-|                           Thinking / reviewing                            |                             Editing / working                             |                              Waiting for you                              |                                 Finished                                  |
-| :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: |
-| <img src="artwork/slow/null-signal/review.gif" width="96" alt="Thinking"> | <img src="artwork/slow/null-signal/running.gif" width="96" alt="Working"> | <img src="artwork/slow/null-signal/waiting.gif" width="96" alt="Waiting"> | <img src="artwork/slow/null-signal/waving.gif" width="96" alt="Finished"> |
+|                             Thinking / reviewing                             |                              Editing / working                               |                               Waiting for you                                |                                   Finished                                   |
+| :--------------------------------------------------------------------------: | :--------------------------------------------------------------------------: | :--------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| <img src="artwork/natural/null-signal/review.gif" width="96" alt="Thinking"> | <img src="artwork/natural/null-signal/running.gif" width="96" alt="Working"> | <img src="artwork/natural/null-signal/waiting.gif" width="96" alt="Waiting"> | <img src="artwork/natural/null-signal/waving.gif" width="96" alt="Finished"> |
 
 Searching uses a walking loop, tests use a jumping loop, errors use the failure animation, and context organization uses idle. Nine animation loops are available per built-in pet. Animations follow general activity, not the mouse or every movement inside Codex.
 
@@ -145,7 +145,7 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 ```sh
 npm ci
 npm test
-node scripts/build-artwork.js /path/to/v2-sprites artwork/slow
+node scripts/build-artwork.js /path/to/v2-sprites artwork/natural
 npm pack --dry-run
 ```
 

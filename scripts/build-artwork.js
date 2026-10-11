@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { BUILTIN_PETS } from "../src/config.js";
 
 const source = process.argv[2],
-  target = process.argv[3] || "artwork";
+  target = process.argv[3] || "artwork/natural";
 if (!source)
   throw new Error(
     "Usage: node scripts/build-artwork.js SPRITE_DIRECTORY [OUTPUT_DIRECTORY]",
@@ -53,7 +53,7 @@ for (const pet of BUILTIN_PETS) {
       },
     })
       .gif({
-        delay: delay.map((ms) => ms * 2),
+        delay,
         loop: 0,
         effort: 7,
         keepDuplicateFrames: true,

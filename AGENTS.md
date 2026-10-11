@@ -15,5 +15,5 @@ Node ESM CLI; Node >=22.18 for read-only node:sqlite. Runtime has no network cal
 - Installer copies runtime modules to a persistent user application folder and creates login startup, never a project-local tool config. Update/uninstall preserve unrelated files and the tiny remembered-pet preference. Windows is live-tested; macOS/Linux launchers have format tests only.
 - Disabled pets use the last remembered supported pet, then Codex by default. Never change Codex's own pet setting.
 - Shared Discord Application ID is public, not a credential. Never use another project's ID.
-- Built-in artwork remains third-party OpenAI artwork, outside the MIT source-code license. Current animation URLs use artwork/slow with twice the original frame delays.
+- Built-in artwork remains third-party OpenAI artwork, outside the MIT source-code license. Current animation URLs use artwork/natural with the native Codex frame delays. The ChatGPT badge uses official vector art with transparent padding for a smaller footprint.
 - `.codegraph/` is local only. Update docs when compatibility changes.
