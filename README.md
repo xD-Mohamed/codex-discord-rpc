@@ -1,68 +1,144 @@
+<div align="center">
+
+<img src="artwork/slow/null-signal/review.gif" width="128" alt="Null Signal thinking">
+
 # Codex Discord RPC
 
-Your Codex companion, animated on Discord. Clear activity, model, effort, project name and Git change totals.
+**Your AI coding companion, live on Discord.**
 
-The Discord activity is named **Codex**. No application ID setup, account token, OpenAI key, plan, quota, prompts or conversation titles.
+Animated pets · Live activity · Model & effort · Project & Git changes
 
-```text
-Codex
-Thinking · GPT-6 Astra · Ultra
-My Project  |  +400 −50
-```
+[![Node.js](https://img.shields.io/badge/Node.js-22.18%2B-43853d)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/Source-MIT-blue)](LICENSE)
+[![No tokens](https://img.shields.io/badge/Account_tokens-not_needed-8b5cf6)](#privacy)
 
-Discord owns the card's layout and fonts; a presence tool cannot move the app name into its top-level Playing heading.
+[Install](#install-once) · [What appears](#what-appears) · [Commands](#commands) · [Compatibility](#compatibility) · [Privacy](#privacy)
 
-## Run
+</div>
 
-Requires Node.js 22.18+ and the Discord desktop app. This first release supports the current Codex desktop local SQLite history format, on the same computer.
+## Install once
 
-```sh
-npx github:xD-Mohamed/codex-discord-rpc
-```
-
-The npm registry shorthand `npx codex-discord-rpc` will work only after a registry release has been published. The GitHub command is the initial distribution channel.
-
-For local source:
+You need **Node.js 22.18+** and the **Discord desktop app** on the same computer as Codex.
 
 ```sh
-npm install
-npm start
+npx --yes github:xD-Mohamed/codex-discord-rpc install
 ```
 
-Keep the terminal running. Ctrl+C clears the activity. Reconnection to Discord is automatic. Nothing is installed into startup or into your Codex configuration.
+That's it. The tool starts in the background now and automatically at your next login. Use Codex normally; the activity follows your work. No Application ID, account token, API key or per-project setup.
+
+> **بالعربي:** شغّل الأمر مرة واحدة. بعد كده الأداة بتشتغل تلقائيًا في الخلفية وتعرض نشاط Codex على Discord. مش لازم تفعّل الـpet داخل Codex.
+
+This is currently distributed through GitHub. The shorter `npx codex-discord-rpc` command is not available until an npm registry release is published.
+
+Want to try it without installing automatic startup?
+
+```sh
+npx --yes github:xD-Mohamed/codex-discord-rpc
+```
+
+Keep that terminal open; press **Ctrl+C** to stop.
 
 ## What appears
 
-- Thinking, Editing code, Reading code, Running tests, Running commands, Searching, Working, Waiting for you, Ready, or Needs attention, based on observed local events.
-- The project directory's final name, optionally hidden with `--hide-project`. Generated projectless chat directories are omitted because their names can contain private requests.
-- Model and reasoning effort. Hide both with `--hide-model`.
-- Git added/deleted line totals, combining staged and unstaged tracked changes against HEAD. Untracked and binary files are excluded. Missing Git, unborn HEAD, errors and timeouts omit counts rather than inventing zero. Hide totals with `--hide-diff`.
-- The selected built-in Codex pet, with the original animation frames for active work, review, waiting, idle, or failure, at half speed. State changes are coalesced to at most one Discord update every five seconds.
-- Elapsed time for the current turn.
-
-Animations follow the general work state; they do not mirror pointer direction or every motion in the Codex window. Discord controls client rendering and animation playback.
-
-When several Codex windows/projects are working, the oldest active turn is selected initially and stays selected until it finishes. Then the next active turn takes over. No periodic rotation. One publisher monitors the shared Codex home; a local OS-held lock prevents two publisher instances fighting over the card.
-
-```sh
-npx github:xD-Mohamed/codex-discord-rpc --hide-project
-npx github:xD-Mohamed/codex-discord-rpc --pet null-signal
-npx github:xD-Mohamed/codex-discord-rpc --dry-run --once
+```text
+ChatGPT Codex
+Thinking · GPT-6 Astra · Ultra
+Project: My App  |  +400 −50
+⏱ Elapsed time
 ```
 
-Built-ins: codex, dewey, fireball, hoots, rocky, seedy, stacky, bsod, null-signal. Selection is detected from local desktop settings. Unknown/custom pets produce text-only presence; private custom artwork is not uploaded. Use `--pet` to choose a supported companion explicitly. `--no-image` disables artwork.
+- **Activity:** thinking, planning, editing, reading, reviewing, searching, testing, running commands, organizing context, creating artwork, waiting, ready or needs attention.
+- **Model and reasoning effort:** read from the actual session when available.
+- **Project:** only the directory's final name. Generated projectless chat folder names are hidden.
+- **Git:** staged + unstaged tracked changes against HEAD. Counts refresh at most every 10 seconds. After committing, `Git clean` replaces `+0 −0`. Untracked and binary files are not counted; unavailable totals are omitted.
+- **Companion:** the selected built-in pet, the last remembered pet when disabled, or the default Codex pet. No need to enable pets in Codex.
+- **ChatGPT badge:** the official black-on-white ChatGPT app icon appears in the lower-right corner of the companion image.
+
+Two projects running? The first active project keeps the card until it finishes. Then the next takes over. **No cycling between projects.** Real projects take priority over projectless chats, including when a project starts a follow-up task. A second publisher cannot compete with the first.
+
+Discord controls the card's fonts and layout. The name cannot be moved into the Playing heading or made larger through Rich Presence. The registered application is named **Codex AI**; the activity requests **ChatGPT Codex** through Discord's activity-name field, subject to client support.
+
+## A companion for every state
+
+Original Codex animation frames, played at **half speed** for calmer motion.
+
+|                           Thinking / reviewing                            |                             Editing / working                             |                              Waiting for you                              |                                 Finished                                  |
+| :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: | :-----------------------------------------------------------------------: |
+| <img src="artwork/slow/null-signal/review.gif" width="96" alt="Thinking"> | <img src="artwork/slow/null-signal/running.gif" width="96" alt="Working"> | <img src="artwork/slow/null-signal/waiting.gif" width="96" alt="Waiting"> | <img src="artwork/slow/null-signal/waving.gif" width="96" alt="Finished"> |
+
+Searching uses a walking loop, tests use a jumping loop, errors use the failure animation, and context organization uses idle. Nine animation loops are available per built-in pet. Animations follow general activity, not the mouse or every movement inside Codex.
+
+Available pets: `codex`, `dewey`, `fireball`, `hoots`, `rocky`, `seedy`, `stacky`, `bsod`, `null-signal`.
+
+Custom pets are not uploaded. If the selected pet is unsupported, the last supported companion or default is used. To pick one explicitly:
+
+```sh
+npx --yes github:xD-Mohamed/codex-discord-rpc install --pet null-signal
+```
+
+## Commands
+
+Use the same `npx --yes github:xD-Mohamed/codex-discord-rpc` prefix:
+
+| Add this           | Result                                                           |
+| ------------------ | ---------------------------------------------------------------- |
+| `install`          | Install/update the background runtime and login startup          |
+| `start`            | Start an already installed runtime                               |
+| `stop`             | Stop it and clear the activity                                   |
+| `uninstall`        | Remove login startup and installed runtime                       |
+| `--dry-run --once` | Preview exactly what would be shared, without contacting Discord |
+| `--help`           | Show options                                                     |
+
+Optional flags: `--hide-project`, `--hide-model`, `--hide-diff`, `--no-image`, `--pet NAME`, `--codex-home PATH`.
+
+```sh
+# Save privacy preferences with the installation
+npx --yes github:xD-Mohamed/codex-discord-rpc install --hide-project --hide-diff
+
+# Stop for now; login startup stays enabled
+npx --yes github:xD-Mohamed/codex-discord-rpc stop
+
+# Remove automatic startup and the runtime
+npx --yes github:xD-Mohamed/codex-discord-rpc uninstall
+```
+
+Reinstalling without flags preserves existing options. The tiny remembered-pet preference is retained on uninstall. Other Codex settings and projects are never modified.
+
+## Compatibility
+
+| Codex surface     | How activity is detected                                       |
+| ----------------- | -------------------------------------------------------------- |
+| Desktop app       | Read-only local SQLite history, with JSONL fallback            |
+| VS Code extension | Local Codex session records, including `codex_vscode` sessions |
+| CLI / terminal    | Local Codex JSONL events, with SQLite when available           |
+
+All three work with the default `~/.codex` home or your `CODEX_HOME`. Use `--codex-home` for a different location. Remote/SSH, Codex Cloud and WSL-hosted sessions need their data and Discord IPC to be accessible in the same environment; automatic remote bridging is not included.
+
+Windows startup uses a hidden launcher in the user's Startup folder. macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
+
+**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. macOS/Linux startup has not been tested on real machines yet.
 
 ## Privacy
 
-SQLite is opened read-only. We query session IDs and local paths to select active work, model/effort labels, and action type/status and command classification fields to distinguish tests from other shell actions. Command text stays local and is discarded. Git runs locally with external diffs/text conversion disabled, and only numeric totals leave the machine. No prompts, reasoning text, responses, file contents, filenames, conversation titles, quotas, credentials or account tokens are included in the activity payload. Local account keys are used solely to resolve the selected pet and never leave the machine.
+Only these fields are sent to Discord:
 
-The only payload sent over local Discord IPC is the name Codex, a fixed activity label, optional model/effort, optional project basename and numeric Git totals, turn start time and a public built-in GIF URL. Discord fetches GIFs from GitHub. There is no telemetry, remote session discovery, SSH or background upload. Use `--dry-run --once` to inspect exactly what would be shared.
+- App/activity name and a fixed status label.
+- Optional model/effort, project basename and numeric Git totals.
+- A turn timestamp and a public built-in animation URL.
 
-Stop other Codex presence tools before running this one to avoid competing activities.
+**Never sent:** prompts, reasoning text, responses, file contents, filenames, full paths, plan, quota, credentials or account tokens.
 
-## Compatibility and limits
+The reader extracts local metadata from SQLite or session JSONL. Session bodies may pass through the local JSON parser but are discarded, not logged or uploaded. Git commands run locally with external diff/text conversion disabled. The tool never reads `auth.json`, calls the OpenAI API, discovers SSH hosts, or collects analytics. Discord fetches artwork from immutable GitHub URLs.
 
-Codex history/settings schemas are internal. Unsupported versions fail closed with a diagnostic rather than guessing. This version needs `state_5.sqlite` and `thread_history_1.sqlite`; older CLI-only installations, remote sessions and WSL are not supported yet. Thinking is inferred from reasoning event metadata; tool labels depend on observed events, so gaps may show Working. Waiting is shown only when an observed status/tool identifies it. Completed work clears after 60 seconds; abandoned in-progress sessions expire after ten minutes without new local activity.
+## Troubleshooting
+
+- **No activity:** open Discord desktop and start a Codex task; then inspect `--dry-run --once`. A paused agent with no new events for ten minutes is treated as stale.
+- **Still showing a completed task:** Ready is kept for up to 60 seconds, then clears unless another task is active.
+- **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
+- **Duplicate instance warning:** one publisher is enough for all Codex windows. Use `stop`, then `start`.
+- **Another presence tool is running:** stop it first to avoid competing cards.
+- **Automatic startup fails:** try foreground mode for a diagnostic. Windows needs Windows Script Host enabled; managed devices may block login launchers.
+- **Unknown Codex version:** session schemas are internal and can change. Unsupported records are omitted rather than publishing guessed content.
 
 ## Development
 
@@ -73,4 +149,8 @@ node scripts/build-artwork.js /path/to/v2-sprites artwork/slow
 npm pack --dry-run
 ```
 
-See AGENTS.md and THIRD_PARTY.md. MIT applies to original source code, not OpenAI companion artwork.
+See [AGENTS.md](AGENTS.md) for architecture and [THIRD_PARTY.md](THIRD_PARTY.md) for artwork attribution. Original source code is MIT; OpenAI companion artwork is not relicensed by this project.
+
+Based on [Discord's Rich Presence guide](https://github.com/discord/discord-api-docs/blob/main/developers/discord-social-sdk/development-guides/setting-rich-presence.mdx), [best practices](https://github.com/discord/discord-api-docs/blob/main/developers/rich-presence/best-practices.mdx) and [RPC specification](https://github.com/discord/discord-api-docs/blob/main/developers/topics/rpc.mdx).
+
+This is an unofficial community integration, not an OpenAI or Discord product.

@@ -8,10 +8,12 @@ Node ESM CLI; Node >=22.18 for read-only node:sqlite. Runtime has no network cal
 - `npm pack --dry-run`: audit distributable files.
 - Never read auth.json; never publish prompts, titles, output, full paths, plan/usage/account data. Model, effort and numeric tracked Git diff totals are explicitly allowed.
 - `localCwd` is internal only; only activity.js may assemble the public payload.
-- Keep the oldest active thread selected until it completes; no rotation. One OS-held loopback listener prevents competing publisher processes.
+- Prefer real projects over generated projectless chats. Within that tier keep the oldest active thread selected until it completes; no rotation. Resumed projects preempt projectless chats. One OS-held loopback listener prevents competing publisher processes.
 - `activity.js` is the egress allowlist. Keep metadata separate.
 - Projectless generated folder names are private; omit them. Ordinary projects use basename only.
-- Current source supports desktop state_5.sqlite + thread_history_1.sqlite. Schemas are private and must fail closed on drift. Do not claim old CLI or remote support.
+- SQLite source uses state_5.sqlite + thread_history_1.sqlite. Bounded JSONL fallback covers local Desktop, VS Code and CLI session formats; exclude subagents and never retain payload text. Schemas are private and must fail closed on drift. Remote bridging is not implemented.
+- Installer copies runtime modules to a persistent user application folder and creates login startup, never a project-local tool config. Update/uninstall preserve unrelated files and the tiny remembered-pet preference. Windows is live-tested; macOS/Linux launchers have format tests only.
+- Disabled pets use the last remembered supported pet, then Codex by default. Never change Codex's own pet setting.
 - Shared Discord Application ID is public, not a credential. Never use another project's ID.
 - Built-in artwork remains third-party OpenAI artwork, outside the MIT source-code license. Current animation URLs use artwork/slow with twice the original frame delays.
 - `.codegraph/` is local only. Update docs when compatibility changes.

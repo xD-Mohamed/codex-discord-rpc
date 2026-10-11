@@ -1,6 +1,6 @@
 {
   "name": "codex-discord-rpc",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Discord Rich Presence for Codex with animated companions, live activity, model, effort and private-by-default Git totals.",
   "type": "module",
   "bin": {
@@ -33,6 +33,7 @@
     "pets"
   ],
   "devDependencies": {
+    "prettier": "^3.9.10",
     "sharp": "^0.35.5"
   }
 }
