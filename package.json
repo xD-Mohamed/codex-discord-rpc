@@ -1,10 +1,10 @@
 {
-  "name": "codex-pet-presence",
+  "name": "codex-discord-rpc",
   "version": "0.1.0",
   "description": "Animated Codex pets in Discord. Activity and project name only.",
   "type": "module",
   "bin": {
-    "codex-pet-presence": "src/cli.js"
+    "codex-discord-rpc": "src/cli.js"
   },
   "engines": {
     "node": ">=22.18.0"
@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/xD-Mohamed/codex-pet-presence.git"
+    "url": "https://github.com/xD-Mohamed/codex-discord-rpc.git"
   },
   "keywords": [
     "codex",

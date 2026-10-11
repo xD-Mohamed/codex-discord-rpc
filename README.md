@@ -1,4 +1,4 @@
-# Codex Pet Presence
+# Codex Discord RPC
 
 Your Codex companion, animated on Discord. Only your activity and optional project name.
 
@@ -9,10 +9,10 @@ The Discord activity is named **Codex**. No application ID setup, account token,
 Requires Node.js 22.18+ and the Discord desktop app. This first release supports the current Codex desktop local SQLite history format, on the same computer.
 
 ```sh
-npx github:xD-Mohamed/codex-pet-presence
+npx github:xD-Mohamed/codex-discord-rpc
 ```
 
-The npm registry shorthand `npx codex-pet-presence` will work only after a registry release has been published. The GitHub command is the initial distribution channel.
+The npm registry shorthand `npx codex-discord-rpc` will work only after a registry release has been published. The GitHub command is the initial distribution channel.
 
 For local source:
 
@@ -33,9 +33,9 @@ Keep the terminal running. Ctrl+C clears the activity. Reconnection to Discord i
 Animations follow the general work state; they do not mirror pointer direction or every motion in the Codex window. Discord controls client rendering and animation playback.
 
 ```sh
-npx github:xD-Mohamed/codex-pet-presence --hide-project
-npx github:xD-Mohamed/codex-pet-presence --pet null-signal
-npx github:xD-Mohamed/codex-pet-presence --dry-run --once
+npx github:xD-Mohamed/codex-discord-rpc --hide-project
+npx github:xD-Mohamed/codex-discord-rpc --pet null-signal
+npx github:xD-Mohamed/codex-discord-rpc --dry-run --once
 ```
 
 Built-ins: codex, dewey, fireball, hoots, rocky, seedy, stacky, bsod, null-signal. Selection is detected from local desktop settings. Unknown/custom pets produce text-only presence; private custom artwork is not uploaded. Use `--pet` to choose a supported companion explicitly. `--no-image` disables artwork.

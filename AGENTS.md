@@ -1,4 +1,4 @@
-# Codex Pet Presence
+# Codex Discord RPC
 
 Node ESM CLI; Node >=22.18 for read-only node:sqlite. Runtime has no network calls except local Discord IPC; Discord fetches public artwork URLs. sharp is for maintainer artwork builds only.
 
