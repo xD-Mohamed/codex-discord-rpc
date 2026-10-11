@@ -8,9 +8,9 @@ import { CodexSource, activePet } from '../src/source.js';
 
 test('reads active SQLite turns, prefers a running tool, expires completed and abandoned sessions',()=>{
   const dir=mkdtempSync(join(tmpdir(),'codex-presence-test-')),now=Date.now(),s=new DatabaseSync(join(dir,'state_5.sqlite')),h=new DatabaseSync(join(dir,'thread_history_1.sqlite'));
-  s.exec('CREATE TABLE threads(id TEXT,cwd TEXT,rollout_path TEXT,updated_at INTEGER,archived INTEGER,agent_path TEXT)');
+  s.exec('CREATE TABLE threads(id TEXT,cwd TEXT,rollout_path TEXT,updated_at INTEGER,archived INTEGER,agent_path TEXT,model TEXT,reasoning_effort TEXT)');
   h.exec('CREATE TABLE thread_turns(thread_id TEXT,turn_id TEXT,status TEXT,started_at INTEGER,completed_at INTEGER,rollout_ordinal INTEGER); CREATE TABLE thread_items(thread_id TEXT,turn_id TEXT,item_type TEXT,item_json TEXT,rollout_ordinal INTEGER)');
-  s.prepare('INSERT INTO threads VALUES(?,?,?,?,0,NULL)').run('t','D:\\Work\\Example','missing',Math.floor(now/1000));
+  s.prepare('INSERT INTO threads VALUES(?,?,?,?,0,NULL,NULL,NULL)').run('t','D:\\Work\\Example','missing',Math.floor(now/1000));
   h.prepare('INSERT INTO thread_turns VALUES(?,?,?,?,NULL,1)').run('t','turn','inProgress',Math.floor(now/1000));
   const add=h.prepare('INSERT INTO thread_items VALUES(?,?,?,?,?)');
   add.run('t','turn','commandExecution',JSON.stringify({status:'inProgress',command:'npm test',aggregatedOutput:'SECRET_OUTPUT'}),1);
@@ -18,8 +18,13 @@ test('reads active SQLite turns, prefers a running tool, expires completed and a
   const source=new CodexSource(dir);
   try {
     assert.equal(source.snapshot(now).state,'testing');
-    assert.doesNotMatch(JSON.stringify(source.snapshot(now)),/SECRET|npm|D:/);
+    assert.doesNotMatch(JSON.stringify(source.snapshot(now)),/SECRET|npm/);
+    s.prepare('INSERT INTO threads VALUES(?,?,?,?,0,NULL,NULL,NULL)').run('other','D:\\Work\\Other','missing',Math.floor(now/1000)+1);
+    h.prepare('INSERT INTO thread_turns VALUES(?,?,?,?,NULL,1)').run('other','turn2','inProgress',Math.floor(now/1000)+1);
+    assert.equal(source.snapshot(now+1000).project,'Example'); // new activity cannot steal the card
     assert.equal(source.snapshot(now+11*60_000),null);
+    h.prepare('UPDATE thread_turns SET status=?,completed_at=? WHERE thread_id=?').run('completed',Math.floor(now/1000),'t');
+    assert.equal(source.snapshot(now+1000).project,'Other'); // hand over only on completion
     h.prepare('UPDATE thread_turns SET status=?,completed_at=?').run('completed',Math.floor(now/1000));
     assert.equal(source.snapshot(now).state,'done');
     assert.equal(source.snapshot(now+61_000),null);

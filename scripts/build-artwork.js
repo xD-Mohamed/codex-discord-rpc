@@ -19,7 +19,7 @@ for(const pet of BUILTIN_PETS) {
       frames.push(await sharp(sheet).extract({left:col*192,top:row*208,width:192,height:208}).resize(256,256,{fit:'contain',background:'#00000000'}).ensureAlpha().raw().toBuffer());
     }
     const output=join(target,pet,`${name}.gif`);
-    await sharp(Buffer.concat(frames),{raw:{width:256,height:256*frames.length,channels:4,pageHeight:256}}).gif({delay,loop:0,effort:7,keepDuplicateFrames:true}).toFile(output);
+    await sharp(Buffer.concat(frames),{raw:{width:256,height:256*frames.length,channels:4,pageHeight:256}}).gif({delay:delay.map(ms=>ms*2),loop:0,effort:7,keepDuplicateFrames:true}).toFile(output);
     const result=await sharp(output,{animated:true}).metadata();
     if(result.pages!==delay.length || result.pageHeight!==256)throw new Error(`Animation verification failed: ${output}`);
   }

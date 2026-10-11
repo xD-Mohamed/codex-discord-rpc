@@ -20,7 +20,7 @@ export class CodexSource {
   snapshot(now = Date.now()) {
     this.open();
     // Read at most 32 recent parent sessions. Never read titles, previews, usage, or auth.
-    const threads = this.state.prepare('SELECT id,cwd,rollout_path,updated_at FROM threads WHERE archived=0 AND (agent_path IS NULL OR agent_path=?) ORDER BY updated_at DESC LIMIT 32').all('/root');
+    const threads = this.state.prepare('SELECT id,cwd,rollout_path,updated_at,model,reasoning_effort FROM threads WHERE archived=0 AND (agent_path IS NULL OR agent_path=?) ORDER BY updated_at DESC LIMIT 32').all('/root');
     const candidates = [];
     for (const t of threads) {
       const turn = this.history.prepare('SELECT turn_id,status,started_at,completed_at FROM thread_turns WHERE thread_id=? ORDER BY rollout_ordinal DESC LIMIT 1').get(t.id);
@@ -32,9 +32,12 @@ export class CodexSource {
       if (!active && now - (turn.completed_at || 0) * 1000 > 60_000) continue;
       candidates.push({t,turn,active,modified});
     }
-    candidates.sort((a,b) => Number(b.active)-Number(a.active) || b.modified-a.modified);
-    const selected = candidates[0];
-    if (!selected) return null;
+    // Oldest active turn wins initially, then keep that thread until it finishes.
+    // Other windows cannot steal the card just by writing a newer event.
+    const activeCandidates = candidates.filter(x=>x.active).sort((a,b)=>a.turn.started_at-b.turn.started_at || a.t.id.localeCompare(b.t.id));
+    const selected = activeCandidates.find(x=>x.t.id===this.selectedThread) || activeCandidates[0] || candidates.sort((a,b)=>b.modified-a.modified)[0];
+    if (!selected) {this.selectedThread=null;return null;}
+    this.selectedThread=selected.t.id;
     const {t,turn,active} = selected;
     let state = turn.status === 'failed' ? 'failed' : 'done';
     if (active) {
@@ -47,7 +50,9 @@ export class CodexSource {
       const pending = items.find(x => ['inProgress','pendingApproval','waitingForApproval'].includes(x.status));
       state = classify(pending || items.find(x => x.type !== 'userMessage') || {type:'reasoning'});
     }
-    return { state, project:projectName(t.cwd,this.options.hideProject), startedAt:turn.started_at };
+    return { state, project:projectName(t.cwd,this.options.hideProject), startedAt:turn.started_at,
+      model:this.options.hideModel?null:t.model, effort:this.options.hideModel?null:t.reasoning_effort,
+      localCwd:t.cwd };
   }
 }
 

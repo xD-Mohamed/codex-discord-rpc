@@ -26,11 +26,21 @@ export function classify(item) {
     default: return 'working';
   }
 }
+export function modelLabel(model, effort) {
+  if (typeof model !== 'string' || !/^[a-zA-Z0-9._-]{1,64}$/.test(model)) return null;
+  const name=model.replace(/^gpt-/i,'GPT-').replace(/-(astra|sol|luna|terra|codex|mini|max|nano|latest)\b/gi,(_,s)=>` ${s[0].toUpperCase()}${s.slice(1).toLowerCase()}`);
+  const allowed=['none','minimal','low','medium','high','xhigh','max','ultra'];
+  return `${name}${allowed.includes(effort)?` · ${effort[0].toUpperCase()}${effort.slice(1)}`:''}`;
+}
 // Sole egress boundary. Never spread session/item metadata into this object.
 export function activity(snapshot, imageUrl) {
   if (!snapshot) return null;
-  const out = { name:'Codex', type:0, details:LABELS[snapshot.state] || LABELS.working };
-  if (snapshot.project) out.state = `Project: ${snapshot.project}`;
+  const label=modelLabel(snapshot.model,snapshot.effort);
+  const out = { name:'Codex', type:0, details:[LABELS[snapshot.state] || LABELS.working,label].filter(Boolean).join(' · ').slice(0,128) };
+  const parts=[];
+  if(snapshot.project)parts.push(snapshot.project);
+  if(Number.isSafeInteger(snapshot.diff?.added) && Number.isSafeInteger(snapshot.diff?.removed) && snapshot.diff.added>=0 && snapshot.diff.removed>=0)parts.push(`+${snapshot.diff.added} −${snapshot.diff.removed}`);
+  if(parts.length)out.state=parts.join('  |  ').slice(0,128);
   if (Number.isFinite(snapshot.startedAt)) out.timestamps = { start:Math.floor(snapshot.startedAt) };
   if (imageUrl) {
     const u = new URL(imageUrl);

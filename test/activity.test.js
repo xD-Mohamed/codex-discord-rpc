@@ -4,9 +4,13 @@ import { activity, classify, projectName } from '../src/activity.js';
 import { Decoder, frame } from '../src/rpc.js';
 
 test('egress contains only an allowlisted activity, project basename and artwork',()=>{
-  const value=activity({state:'thinking',project:projectName('C:\\Users\\PRIVATE_USER\\Work\\Example'),startedAt:123,title:'SECRET_TITLE',prompt:'SECRET_PROMPT',command:'SECRET_COMMAND',quota:99,model:'SECRET_MODEL'},'https://example.com/pet.gif');
-  assert.deepEqual(value,{name:'Codex',type:0,details:'Thinking',state:'Project: Example',timestamps:{start:123},assets:{large_image:'https://example.com/pet.gif',large_text:'Codex companion'}});
+  const value=activity({state:'thinking',project:projectName('C:\\Users\\PRIVATE_USER\\Work\\Example'),startedAt:123,title:'SECRET_TITLE',prompt:'SECRET_PROMPT',command:'SECRET_COMMAND',quota:99,localCwd:'PRIVATE_PATH'},'https://example.com/pet.gif');
+  assert.deepEqual(value,{name:'Codex',type:0,details:'Thinking',state:'Example',timestamps:{start:123},assets:{large_image:'https://example.com/pet.gif',large_text:'Codex companion'}});
   assert.doesNotMatch(JSON.stringify(value),/SECRET|PRIVATE|quota|model|command/);
+});
+test('model, effort and diff are compact; private internal fields stay local',()=>{
+  const out=activity({state:'thinking',project:'Example',model:'gpt-6-astra',effort:'ultra',diff:{added:400,removed:50,files:['SECRET']},localCwd:'SECRET_PATH'});
+  assert.equal(out.details,'Thinking · GPT-6 Astra · Ultra');assert.equal(out.state,'Example  |  +400 −50');assert.doesNotMatch(JSON.stringify(out),/SECRET/);
 });
 test('projectless directories, hidden names, control characters and Windows paths',()=>{
   assert.equal(projectName('C:\\Users\\Alice\\Documents\\Codex\\2026-10-11\\private-request'),null);
