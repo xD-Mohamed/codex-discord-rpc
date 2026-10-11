@@ -14,6 +14,7 @@ Node ESM CLI; Node >=22.18 for read-only node:sqlite. Runtime has no network cal
 - SQLite source uses state_5.sqlite + thread_history_1.sqlite. Bounded JSONL fallback covers local Desktop, VS Code and CLI session formats; exclude subagents and never retain payload text. Schemas are private and must fail closed on drift. Remote bridging is not implemented.
 - Installer copies runtime modules to a persistent user application folder and creates login startup, never a project-local tool config. Update/uninstall preserve unrelated files and the tiny remembered-pet preference. Windows is live-tested; macOS/Linux launchers have format tests only.
 - Disabled pets use the last remembered supported pet, then Codex by default. Never change Codex's own pet setting.
+- Idle presence is separate from task expiry: liveness.js probes executable paths (never command arguments/titles) every five seconds and retains the last observed session metadata in memory only while that surface remains open. Confirmed closure clears presence; unknown process state does not invent Idle. Keep transitions and no-process behavior covered by liveness.test.js.
 - Shared Discord Application ID is public, not a credential. Never use another project's ID.
 - Built-in artwork remains third-party OpenAI artwork, outside the MIT source-code license. Current animation URLs use artwork/natural with the native Codex frame delays. The ChatGPT badge uses official vector art with transparent padding for a smaller footprint.
 - `.codegraph/` is local only. Update docs when compatibility changes.

@@ -47,7 +47,7 @@ Project: My App  |  +400 −50
 ⏱ Elapsed time
 ```
 
-- **Activity:** thinking, planning, editing, reading, reviewing, searching, testing, running commands, organizing context, creating artwork, waiting, ready or needs attention.
+- **Activity:** thinking, planning, editing, reading, reviewing, searching, testing, running commands, organizing context, creating artwork, waiting, idle or needs attention.
 - **Model and reasoning effort:** read from the actual session when available.
 - **Project:** only the directory's final name. Generated projectless chat folder names are hidden.
 - **Git:** staged + unstaged tracked changes against HEAD. Counts refresh at most every 10 seconds. After committing, `Git clean` replaces `+0 −0`. Untracked and binary files are not counted; unavailable totals are omitted.
@@ -55,6 +55,8 @@ Project: My App  |  +400 −50
 - **ChatGPT badge:** a small white ChatGPT mark on a fully transparent background appears in the lower-right corner of the companion image.
 
 Two projects running? The first active project keeps the card until it finishes. Then the next takes over. **No cycling between projects.** Real projects take priority over projectless chats, including when a project starts a follow-up task. A second publisher cannot compete with the first.
+
+Finished working but left Codex open? The card stays visible as **Idle**, with the idle pet animation and the last observed project/model where available. It switches back when work resumes and clears when the supported Codex app/backend processes close. A cold start without recent task metadata shows a generic Idle card. Process checks read executable paths only, never arguments or window titles; a generic VS Code window alone does not imply that its Codex extension is running.
 
 Discord controls the card's fonts and layout. The name cannot be moved into the Playing heading or made larger through Rich Presence. The registered application is named **Codex AI**; the activity requests **ChatGPT Codex** through Discord's activity-name field, subject to client support.
 
@@ -132,8 +134,8 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 
 ## Troubleshooting
 
-- **No activity:** open Discord desktop and start a Codex task; then inspect `--dry-run --once`. A paused agent with no new events for ten minutes is treated as stale.
-- **Still showing a completed task:** Ready is kept for up to 60 seconds, then clears unless another task is active.
+- **No activity:** open Discord desktop and Codex (or initialize the Codex extension/CLI backend), then inspect `--dry-run --once`. Process detection recognizes standard installations. If OS process inspection is blocked, fresh task events can still appear but persistent Idle cannot be confirmed.
+- **Idle after work:** expected while Codex remains open. New work replaces Idle automatically. After ten minutes without new task events, stale work is also downgraded to Idle rather than displayed as Thinking indefinitely.
 - **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
 - **Duplicate instance warning:** one publisher is enough for all Codex windows. Use `stop`, then `start`.
 - **Another presence tool is running:** stop it first to avoid competing cards.

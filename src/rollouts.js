@@ -244,7 +244,7 @@ export class RolloutSource {
     for (const key of this.cache.keys())
       if (!this.files.includes(key)) this.cache.delete(key);
   }
-  snapshot(now = Date.now(), excludedIds = []) {
+  snapshot(now = Date.now(), excludedIds = [], openSurfaces = null) {
     if (now - this.lastScan >= 10_000) this.discover(now);
     const snapshots = [];
     for (const file of this.files) {
@@ -264,7 +264,8 @@ export class RolloutSource {
           this.options.hideProject,
           this.options.hideModel,
         );
-        if (s) snapshots.push(s);
+        if (s && (!openSurfaces || openSurfaces.includes(s.surface)))
+          snapshots.push(s);
       } catch {
         /* Files can disappear/rotate between discovery and read. */
       }

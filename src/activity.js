@@ -2,6 +2,7 @@ import path from "node:path";
 import { CHATGPT_LOGO } from "./config.js";
 
 export const LABELS = Object.freeze({
+  idle: "Idle",
   thinking: "Thinking",
   planning: "Planning",
   editing: "Editing code",
@@ -18,6 +19,7 @@ export const LABELS = Object.freeze({
   failed: "Needs attention",
 });
 export const ANIMATIONS = Object.freeze({
+  idle: "idle",
   thinking: "review",
   planning: "review",
   editing: "running",

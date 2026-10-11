@@ -10,6 +10,7 @@ import { GitDiff } from "./git.js";
 import { singleInstance, stopInstance, waitForStop } from "./instance.js";
 import { install, uninstall, startInstalled, installPaths } from "./install.js";
 import { PetSelection } from "./pet.js";
+import { ProcessProbe, IdlePresence } from "./liveness.js";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -97,6 +98,8 @@ const source = new CodexSource(home, {
   hideModel: values["hide-model"],
 });
 const git = new GitDiff();
+const processProbe = new ProcessProbe();
+const idlePresence = new IdlePresence();
 const pets = new PetSelection(join(installPaths().root, "state", "pet.json"));
 let instance;
 if (!values["dry-run"])
@@ -142,7 +145,11 @@ while (!stopped) {
     continue;
   }
   try {
-    const snapshot = source.snapshot();
+    const openSurfaces = await processProbe.read();
+    const snapshot = idlePresence.update(
+      source.snapshot(Date.now(), openSurfaces),
+      openSurfaces,
+    );
     if (snapshot && !values["hide-diff"])
       snapshot.diff = await git.read(snapshot.localCwd);
     if (stopped) break;

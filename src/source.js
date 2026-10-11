@@ -37,7 +37,7 @@ class SqliteSource {
     this.state?.close();
     this.history = this.state = null;
   }
-  snapshot(now = Date.now()) {
+  snapshot(now = Date.now(), openSurfaces = null) {
     this.open();
     // Read at most 32 recent parent sessions. Never read titles, previews, usage, or auth.
     const threads = this.state
@@ -48,6 +48,11 @@ class SqliteSource {
     this.indexedIds = [];
     const candidates = [];
     for (const t of threads) {
+      if (
+        openSurfaces &&
+        !openSurfaces.includes(surfaceName(t.source, t.originator || ""))
+      )
+        continue;
       const turn = this.history
         .prepare(
           "SELECT turn_id,status,started_at,completed_at FROM thread_turns WHERE thread_id=? ORDER BY rollout_ordinal DESC LIMIT 1",
@@ -130,16 +135,16 @@ export class CodexSource {
     this.sqlite = new SqliteSource(home, options);
     this.rollouts = new RolloutSource(home, options);
   }
-  snapshot(now = Date.now()) {
+  snapshot(now = Date.now(), openSurfaces = null) {
     let sql = null,
       excluded = [];
     try {
-      sql = this.sqlite.snapshot(now);
+      sql = this.sqlite.snapshot(now, openSurfaces);
       excluded = this.sqlite.indexedIds || [];
     } catch {
       this.sqlite.close();
     }
-    const fallback = this.rollouts.snapshot(now, excluded);
+    const fallback = this.rollouts.snapshot(now, excluded, openSurfaces);
     const candidates = [sql, fallback].filter(Boolean),
       active = candidates
         .filter((x) => x.active)
