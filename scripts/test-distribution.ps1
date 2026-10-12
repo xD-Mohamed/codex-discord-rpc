@@ -10,7 +10,7 @@ $env:APPDATA = Join-Path $root 'Roaming'
 $env:LOCALAPPDATA = Join-Path $root 'Local'
 $env:CODEX_HOME = Join-Path $root 'codex'
 $env:npm_config_cache = Join-Path $root 'npm-cache'
-$installed = Join-Path $env:LOCALAPPDATA 'CodexDiscordRPC\src\cli.js'
+$installed = Join-Path $env:LOCALAPPDATA 'Programs\Codex Discord RPC\src\cli.js'
 Push-Location $root
 try {
   # Use the public npx entry point, including download, extraction and bin linking.
@@ -23,7 +23,7 @@ try {
   # Repeat using the same cache, as a user updating an existing installation does.
   & npx.cmd --yes $Package install
   if ($LASTEXITCODE -ne 0) { throw 'Repeated GitHub installation failed' }
-  $record = Get-Content (Join-Path $env:LOCALAPPDATA 'CodexDiscordRPC\install-record.json') -Raw | ConvertFrom-Json
+  $record = Get-Content (Join-Path $env:LOCALAPPDATA 'Programs\Codex Discord RPC\install-record.json') -Raw | ConvertFrom-Json
   if ($record.args -notcontains '--hide-project') { throw 'Update lost saved options' }
   & npx.cmd --yes $Package stop
   if ($LASTEXITCODE -ne 0) { throw 'Stop from npx failed' }

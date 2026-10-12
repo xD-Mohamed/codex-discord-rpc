@@ -5,89 +5,67 @@ import {
   installPaths,
   startupContents,
   windowsArguments,
-  windowsShortcut,
   persistentArgs,
 } from "../src/install.js";
-test("Windows autostart runs a quoted persistent installation directly, not an npx cache", () => {
-  const paths = installPaths(
-    "win32",
-    {
-      LOCALAPPDATA: "C:\\Users\\Test User\\AppData\\Local",
-      APPDATA: "C:\\Users\\Test User\\AppData\\Roaming",
-    },
-    "C:\\Users\\Test User",
-  );
-  const script = startupContents(paths, "C:\\Program Files\\nodejs\\node.exe", [
-    "--hide-project",
-  ]);
-  assert.match(paths.startup, /Startup\\Codex Discord RPC\.lnk$/);
-  assert.match(script, /IShellLinkW/);
-  assert.match(script, /IPersistFile/);
-  assert.match(script, /\$link.TargetPath = 'C:\\Program Files/);
-  assert.match(script, /--hide-project/);
-  assert.match(script, /\$link.WindowStyle = 7/);
-  assert.doesNotMatch(
-    script,
-    /EncodedCommand|Start-Process|powershell\.exe|WindowStyle Hidden|npx|cmd\.exe/i,
-  );
-});
-test("macOS startup uses XML-safe arguments", () => {
-  const paths = installPaths("darwin", {}, "/Users/Test & User");
-  const s = startupContents(paths, "/opt/node");
-  assert.match(s, /Test &amp; User/);
-  assert.match(s, /<key>RunAtLoad<\/key><true\/>/);
-});
-test("Linux autostart quotes Exec and escapes desktop field codes", () => {
-  const paths = installPaths(
-    "linux",
-    { XDG_DATA_HOME: "/home/user/100%data" },
-    "/home/user",
-  );
-  const s = startupContents(paths, "/usr/bin/node");
-  assert.match(s, /100%%data/);
-  assert.match(s, /Terminal=false/);
-});
-
-test("Windows shortcut preserves Unicode and literal PowerShell metacharacters", () => {
+import { taskName, taskXml } from "../src/windows-task.js";
+import { shortcutDescription } from "../src/windows-shortcut.js";
+test("Windows login task starts Node directly as the interactive user", () => {
   const paths = installPaths(
     "win32",
     {},
     "C:\\Users\\محمد O'Brien $user %data%",
   );
-  const args = ["--codex-home", "C:\\Codex data\\"];
-  const launcher = windowsArguments(
-    paths,
-    "C:\\Program Files\\nodejs\\node.exe",
-    args,
+  const node = "C:\\Program Files\\nodejs\\node.exe";
+  const args = windowsArguments(paths, node, [
+    "--codex-home",
+    "C:\\Codex & data\\",
+  ]);
+  const xml = taskXml(paths.root, node, args, "S-1-5-21-123-1000");
+  assert.match(paths.root, /Programs\\Codex Discord RPC$/);
+  assert.match(xml, /<LogonTrigger>/);
+  assert.match(xml, /<LogonType>InteractiveToken<\/LogonType>/);
+  assert.match(xml, /<RunLevel>LeastPrivilege<\/RunLevel>/);
+  assert.match(xml, /<ExecutionTimeLimit>PT0S<\/ExecutionTimeLimit>/);
+  assert.match(xml, /<Command>C:\\Program Files\\nodejs\\node.exe<\/Command>/);
+  assert.ok(xml.includes("محمد O&apos;Brien $user %data%"));
+  assert.ok(xml.includes("Codex &amp; data"));
+  assert.ok(args.includes('"C:\\Codex & data\\\\"'));
+  assert.doesNotMatch(
+    xml,
+    /EncodedCommand|powershell\.exe|wscript|cmd\.exe|HighestAvailable/i,
   );
-  const shortcut = startupContents(
-    paths,
-    "C:\\Program Files\\nodejs\\node.exe",
-    args,
-  );
-  assert.ok(launcher.includes("محمد O'Brien $user %data%"));
-  assert.ok(shortcut.includes("محمد O''Brien $user %data%"));
-  assert.ok(launcher.includes('"C:\\Codex data\\\\"'));
-  assert.match(shortcut, /unrelated startup shortcut/);
+  assert.equal(taskName(paths.root), taskName(paths.root.toUpperCase()));
+  assert.notEqual(taskName(paths.root), taskName(paths.root + " other"));
   assert.throws(
     () => windowsArguments(paths, 'C:\\bad"node.exe'),
     /Unsupported quote/,
   );
 });
-test("Windows uninstall checks shortcut ownership before removal", () => {
-  const script = windowsShortcut(
-    installPaths("win32", {}, "C:\\Users\\Test"),
-    "",
-    [],
-    true,
-  );
-  assert.ok(
-    script.indexOf("$link.Description -ne") < script.indexOf("Remove-Item"),
-  );
-  assert.doesNotMatch(script, /\$link.Save|Start-Process/);
+test("legacy shortcut ownership parser fails closed on malformed files", () => {
+  for (const bytes of [Buffer.alloc(0), Buffer.alloc(75), Buffer.alloc(80)])
+    assert.throws(() => shortcutDescription(bytes), /Invalid Windows/);
 });
-
-test("installation persists Codex home independently of the login environment and cwd", () => {
+test("macOS startup uses XML-safe arguments", () => {
+  const s = startupContents(
+    installPaths("darwin", {}, "/Users/Test & User"),
+    "/opt/node",
+  );
+  assert.match(s, /Test &amp; User/);
+  assert.match(s, /<key>RunAtLoad<\/key><true\/>/);
+});
+test("Linux startup quotes desktop field codes", () => {
+  const s = startupContents(
+    installPaths(
+      "linux",
+      { XDG_DATA_HOME: "/home/user/100%data" },
+      "/home/user",
+    ),
+    "/usr/bin/node",
+  );
+  assert.match(s, /100%%data/);
+  assert.match(s, /Terminal=false/);
+});
+test("saved Codex home is independent of login environment and cwd", () => {
   const cwd = process.cwd();
   const args = ["--hide-project", "--codex-home", "custom-codex"];
   assert.deepEqual(persistentArgs(args, { CODEX_HOME: "ignored" }, cwd), [

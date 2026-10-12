@@ -1,45 +1,33 @@
-// Use the Unicode Shell Link API; WScript.Shell can lose non-ANSI path characters.
-export const shortcutType = `
-Add-Type -TypeDefinition @'
-using System;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
-[ComImport, Guid("00021401-0000-0000-C000-000000000046")]
-class ShellLinkClass {}
-[ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-interface IShellLinkW {
-  void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, IntPtr data, uint flags);
-  void GetIDList(out IntPtr id);
-  void SetIDList(IntPtr id);
-  void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder value, int count);
-  void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string value);
-  void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder value, int count);
-  void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string value);
-  void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder value, int count);
-  void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string value);
-  void GetHotkey(out short value);
-  void SetHotkey(short value);
-  void GetShowCmd(out int value);
-  void SetShowCmd(int value);
-  void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder value, int count, out int index);
-  void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string value, int index);
-  void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string value, uint reserved);
-  void Resolve(IntPtr window, uint flags);
-  void SetPath([MarshalAs(UnmanagedType.LPWStr)] string value);
-}
-public class CodexStartupShortcut {
-  readonly IShellLinkW link = (IShellLinkW)new ShellLinkClass();
-  public void Load(string file) { ((IPersistFile)link).Load(file, 0); }
-  public void Save(string file) { ((IPersistFile)link).Save(file, true); }
-  public string Description {
-    get { var text = new StringBuilder(1024); link.GetDescription(text, text.Capacity); return text.ToString(); }
-    set { link.SetDescription(value); }
+// Read legacy Shell Link ownership without running a script host.
+const CLSID = Buffer.from("0114020000000000c000000000000046", "hex");
+export function shortcutDescription(bytes) {
+  const requireBytes = (offset, count) => {
+    if (offset < 0 || count < 0 || offset + count > bytes.length)
+      throw new Error("Invalid Windows shortcut; refusing to overwrite it.");
+  };
+  requireBytes(0, 76);
+  if (bytes.readUInt32LE(0) !== 76 || !bytes.subarray(4, 20).equals(CLSID))
+    throw new Error("Invalid Windows shortcut; refusing to overwrite it.");
+  const flags = bytes.readUInt32LE(20);
+  let offset = 76;
+  if (flags & 1) {
+    requireBytes(offset, 2);
+    const size = bytes.readUInt16LE(offset);
+    requireBytes(offset, 2 + size);
+    offset += 2 + size;
   }
-  public string TargetPath { set { link.SetPath(value); } }
-  public string Arguments { set { link.SetArguments(value); } }
-  public string WorkingDirectory { set { link.SetWorkingDirectory(value); } }
-  public int WindowStyle { set { link.SetShowCmd(value); } }
+  if (flags & 2) {
+    requireBytes(offset, 4);
+    const size = bytes.readUInt32LE(offset);
+    if (size < 28) throw new Error("Invalid Windows shortcut LinkInfo.");
+    requireBytes(offset, size);
+    offset += size;
+  }
+  if (!(flags & 4)) return "";
+  requireBytes(offset, 2);
+  const size = bytes.readUInt16LE(offset) * (flags & 128 ? 2 : 1);
+  requireBytes(offset + 2, size);
+  return bytes
+    .subarray(offset + 2, offset + 2 + size)
+    .toString(flags & 128 ? "utf16le" : "latin1");
 }
-'@
-`;
