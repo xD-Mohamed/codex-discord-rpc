@@ -18,3 +18,16 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm pack --dry-run
+  github-install:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.14.1"
+      - run: npm install --global npm@11.11.0
+      - name: Install and update directly from GitHub using npx
+        shell: pwsh
+        env:
+          PACKAGE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: ./scripts/test-distribution.ps1 -Package "github:xD-Mohamed/codex-discord-rpc#$env:PACKAGE_SHA"
