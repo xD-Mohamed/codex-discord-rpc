@@ -116,7 +116,7 @@ Reinstalling without flags preserves existing options. Installation saves an exp
 
 All three work with the default `~/.codex` home or your `CODEX_HOME`. Use `--codex-home` for a different location. Remote/SSH, Codex Cloud and WSL-hosted sessions need their data and Discord IPC to be accessible in the same environment; automatic remote bridging is not included.
 
-Windows startup uses a Startup-folder shortcut that launches the runtime hidden through Windows PowerShell, without requiring VBScript. Updating replaces the old managed VBS launcher. Startup occurs after signing in to your Windows account, not before login. If Discord opens later, the runtime retries automatically (up to 30 seconds between retries). macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
+Windows startup uses a standard Startup-folder shortcut pointing directly to Node.js with readable arguments. It starts minimized; a console/taskbar entry may remain visible. Login startup does not run a PowerShell wrapper or encoded commands. Windows PowerShell is used during installation/removal to manage the Unicode shortcut, and for read-only process detection. Updating replaces the old managed VBS launcher. Startup occurs after signing in to your Windows account, not before login. If Discord opens later, the runtime retries automatically (up to 30 seconds between retries). macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
 
 **Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. GitHub Actions tests Windows and Linux on Node 22.18 and 24. The Windows integration test installs, migrates the old launcher, preserves options, stops the runtime, launches the actual Startup shortcut from a Unicode path, and uninstalls. A full interactive Windows reboot and real macOS/Linux login startup are not covered by these tests.
 
@@ -139,7 +139,7 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 - **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
 - **Duplicate instance warning:** one publisher is enough for all Codex windows. Use `stop`, then `start`.
 - **Another presence tool is running:** stop it first to avoid competing cards.
-- **Automatic startup fails:** try foreground mode for a diagnostic. On Windows, check Settings → Apps → Startup and make sure Codex Discord RPC is enabled. The launcher requires Windows PowerShell; managed devices may block login launchers. Run `start` to restart an existing installation without reinstalling. After updating from the old VBS launcher, run `install` once to create the new shortcut.
+- **Automatic startup fails:** try foreground mode for a diagnostic. On Windows, check Settings → Apps → Startup and make sure Codex Discord RPC is enabled. Installation requires Windows PowerShell; managed devices may block login launchers. Run `start` to restart an existing installation without reinstalling. After updating from an older launcher, run `install` once to create the new shortcut.
 - **Unknown Codex version:** session schemas are internal and can change. Unsupported records are omitted rather than publishing guessed content.
 
 ## Development
@@ -156,3 +156,7 @@ See [AGENTS.md](AGENTS.md) for architecture and [THIRD_PARTY.md](THIRD_PARTY.md)
 Based on [Discord's Rich Presence guide](https://github.com/discord/discord-api-docs/blob/main/developers/discord-social-sdk/development-guides/setting-rich-presence.mdx), [best practices](https://github.com/discord/discord-api-docs/blob/main/developers/rich-presence/best-practices.mdx) and [RPC specification](https://github.com/discord/discord-api-docs/blob/main/developers/topics/rpc.mdx).
 
 This is an unofficial community integration, not an OpenAI or Discord product.
+
+### Antivirus notices
+
+If an antivirus flags a file, keep protection enabled and check the exact detection name, file path, and hash. Do not assume a false positive or add an exclusion. Version 0.3.4 removes the encoded, hidden PowerShell login wrapper used by 0.3.3; the shortcut now starts Node directly. This does not guarantee approval by any antivirus vendor. See [SECURITY.md](SECURITY.md) for reviewed behavior and limitations.

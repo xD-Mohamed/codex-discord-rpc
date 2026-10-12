@@ -61,12 +61,7 @@ test(
       const script = `Invoke-Item -LiteralPath '${paths.startup.replaceAll("'", "''")}'`;
       execFileSync(
         "powershell.exe",
-        [
-          "-NoProfile",
-          "-NonInteractive",
-          "-EncodedCommand",
-          Buffer.from(script, "utf16le").toString("base64"),
-        ],
+        ["-NoProfile", "-NonInteractive", "-Command", script],
         { windowsHide: true },
       );
       for (let i = 0; i < 60 && !(await instanceStatus()); i++)
