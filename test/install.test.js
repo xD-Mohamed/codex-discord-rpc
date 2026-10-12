@@ -21,7 +21,8 @@ test("Windows autostart runs a quoted persistent installation hidden, not an npx
     "--hide-project",
   ]);
   assert.match(paths.startup, /Startup\\Codex Discord RPC\.lnk$/);
-  assert.match(script, /CreateShortcut/);
+  assert.match(script, /IShellLinkW/);
+  assert.match(script, /IPersistFile/);
   assert.match(
     script,
     /-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand/,

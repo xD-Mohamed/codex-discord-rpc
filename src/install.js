@@ -1,3 +1,4 @@
+import { shortcutType } from "./windows-shortcut.js";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,8 +117,9 @@ Start-Process -FilePath ${psQuote(node)} -ArgumentList ${psQuote(command)} -Work
 export function windowsShortcut(paths, launcher, remove = false) {
   return `$ErrorActionPreference = 'Stop'
 $file = ${psQuote(paths.startup)}
-$shell = New-Object -ComObject WScript.Shell
-$link = $shell.CreateShortcut($file)
+${shortcutType}
+$link = New-Object CodexStartupShortcut
+if (Test-Path -LiteralPath $file) { $link.Load($file) }
 if ((Test-Path -LiteralPath $file) -and $link.Description -ne '${ID} managed startup') {
   throw 'An unrelated startup shortcut already exists at the target path.'
 }
@@ -129,7 +131,7 @@ $link.Arguments = '-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -Encod
 $link.WorkingDirectory = ${psQuote(paths.root)}
 $link.Description = '${ID} managed startup'
 $link.WindowStyle = 7
-$link.Save()`
+$link.Save($file)`
 }
 `;
 }
