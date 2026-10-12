@@ -118,7 +118,7 @@ All three work with the default `~/.codex` home or your `CODEX_HOME`. Use `--cod
 
 Windows startup uses a Startup-folder shortcut that launches the runtime hidden through Windows PowerShell, without requiring VBScript. Updating replaces the old managed VBS launcher. Startup occurs after signing in to your Windows account, not before login. If Discord opens later, the runtime retries automatically (up to 30 seconds between retries). macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
 
-**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. The new Windows shortcut and macOS/Linux startup have format tests only; a real Windows reboot has not yet been verified for the shortcut.
+**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. GitHub Actions tests Windows and Linux on Node 22.18 and 24. The Windows integration test installs, migrates the old launcher, preserves options, stops the runtime, launches the actual Startup shortcut from a Unicode path, and uninstalls. A full interactive Windows reboot and real macOS/Linux login startup are not covered by these tests.
 
 ## Privacy
 
