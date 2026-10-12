@@ -83,3 +83,26 @@ test("shutdown cancels a handshake without leaving the process connected", async
     await server.close();
   }
 });
+
+test("RPC can connect after Discord was unavailable at login", async () => {
+  const unavailable = await mock(() => {});
+  const address = unavailable.address;
+  await unavailable.close();
+  const client = new DiscordRPC("123");
+  let server;
+  try {
+    await assert.rejects(client.connect([address]), /reconnect is automatic/);
+    assert.equal(client.ready, false);
+    server = await mock((socket, { op, data }) => {
+      if (op === 0) socket.write(frame(1, { evt: "READY" }));
+      if (data.cmd === "SET_ACTIVITY")
+        socket.write(frame(1, { nonce: data.nonce, data: {} }));
+    });
+    await client.connect([server.address]);
+    await client.setActivity({ details: "Idle" });
+    assert.equal(client.ready, true);
+  } finally {
+    client.close();
+    await server?.close();
+  }
+});
