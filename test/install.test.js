@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import {
   installPaths,
   startupContents,
-  windowsLauncher,
+  windowsArguments,
   windowsShortcut,
   persistentArgs,
 } from "../src/install.js";
-test("Windows autostart runs a quoted persistent installation hidden, not an npx cache", () => {
+test("Windows autostart runs a quoted persistent installation directly, not an npx cache", () => {
   const paths = installPaths(
     "win32",
     {
@@ -23,16 +23,13 @@ test("Windows autostart runs a quoted persistent installation hidden, not an npx
   assert.match(paths.startup, /Startup\\Codex Discord RPC\.lnk$/);
   assert.match(script, /IShellLinkW/);
   assert.match(script, /IPersistFile/);
-  assert.match(
+  assert.match(script, /\$link.TargetPath = 'C:\\Program Files/);
+  assert.match(script, /--hide-project/);
+  assert.match(script, /\$link.WindowStyle = 7/);
+  assert.doesNotMatch(
     script,
-    /-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand/,
+    /EncodedCommand|Start-Process|powershell\.exe|WindowStyle Hidden|npx|cmd\.exe/i,
   );
-  const encoded = script.match(/-EncodedCommand ([A-Za-z0-9+/=]+)/)[1];
-  const launcher = Buffer.from(encoded, "base64").toString("utf16le");
-  assert.match(launcher, /Start-Process -FilePath 'C:\\Program Files/);
-  assert.match(launcher, /--hide-project/);
-  assert.match(launcher, /-WindowStyle Hidden/);
-  assert.doesNotMatch(launcher, /npx|cmd\.exe|wscript|cscript/i);
 });
 test("macOS startup uses XML-safe arguments", () => {
   const paths = installPaths("darwin", {}, "/Users/Test & User");
@@ -58,7 +55,7 @@ test("Windows shortcut preserves Unicode and literal PowerShell metacharacters",
     "C:\\Users\\محمد O'Brien $user %data%",
   );
   const args = ["--codex-home", "C:\\Codex data\\"];
-  const launcher = windowsLauncher(
+  const launcher = windowsArguments(
     paths,
     "C:\\Program Files\\nodejs\\node.exe",
     args,
@@ -68,13 +65,12 @@ test("Windows shortcut preserves Unicode and literal PowerShell metacharacters",
     "C:\\Program Files\\nodejs\\node.exe",
     args,
   );
-  const payload = shortcut.match(/-EncodedCommand ([A-Za-z0-9+/=]+)/)[1];
-  assert.equal(Buffer.from(payload, "base64").toString("utf16le"), launcher);
-  assert.ok(launcher.includes("محمد O''Brien $user %data%"));
+  assert.ok(launcher.includes("محمد O'Brien $user %data%"));
+  assert.ok(shortcut.includes("محمد O''Brien $user %data%"));
   assert.ok(launcher.includes('"C:\\Codex data\\\\"'));
   assert.match(shortcut, /unrelated startup shortcut/);
   assert.throws(
-    () => windowsLauncher(paths, 'C:\\bad"node.exe'),
+    () => windowsArguments(paths, 'C:\\bad"node.exe'),
     /Unsupported quote/,
   );
 });
@@ -82,6 +78,7 @@ test("Windows uninstall checks shortcut ownership before removal", () => {
   const script = windowsShortcut(
     installPaths("win32", {}, "C:\\Users\\Test"),
     "",
+    [],
     true,
   );
   assert.ok(

@@ -80,8 +80,7 @@ export function startupContents(paths, node, args = []) {
       ...args,
     ];
   if (paths.platform === "win32") {
-    const launcher = windowsLauncher(paths, node, args);
-    return windowsShortcut(paths, launcher);
+    return windowsShortcut(paths, node, args);
   }
   if (paths.platform === "darwin")
     return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>Label</key><string>io.github.xd-mohamed.${ID}</string><key>ProgramArguments</key><array>${argv.map((x) => `<string>${xml(x)}</string>`).join("")}</array><key>RunAtLoad</key><true/></dict></plist>\n`;
@@ -97,8 +96,7 @@ export function startupContents(paths, node, args = []) {
   return `[Desktop Entry]\nType=Application\nName=Codex Discord RPC\nComment=${ID} managed startup\nExec=${argv.map(quote).join(" ")}\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`;
 }
 const psQuote = (value) => "'" + value.replaceAll("'", "''") + "'";
-const encoded = (value) => Buffer.from(value, "utf16le").toString("base64");
-export function windowsLauncher(paths, node, args = []) {
+export function windowsArguments(paths, node, args = []) {
   const argv = [
     "--disable-warning=ExperimentalWarning",
     path.win32.join(paths.root, "src", "cli.js"),
@@ -106,15 +104,13 @@ export function windowsLauncher(paths, node, args = []) {
   ];
   if ([node, ...argv].some((x) => /["\r\n]/.test(x)))
     throw new Error("Unsupported quote in startup path.");
-  // Start-Process joins ArgumentList; quote each argument using Windows argv rules.
+  // The shortcut passes these arguments directly to Node using Windows argv rules.
   const command = argv
     .map((x) => '"' + x.replace(/(\\+)$/g, "$1$1") + '"')
     .join(" ");
-  return `$ErrorActionPreference = 'Stop'
-Start-Process -FilePath ${psQuote(node)} -ArgumentList ${psQuote(command)} -WorkingDirectory ${psQuote(paths.root)} -WindowStyle Hidden
-`;
+  return command;
 }
-export function windowsShortcut(paths, launcher, remove = false) {
+export function windowsShortcut(paths, node, args = [], remove = false) {
   return `$ErrorActionPreference = 'Stop'
 $file = ${psQuote(paths.startup)}
 ${shortcutType}
@@ -126,8 +122,8 @@ if ((Test-Path -LiteralPath $file) -and $link.Description -ne '${ID} managed sta
 ${
   remove
     ? `if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }`
-    : `$link.TargetPath = Join-Path $PSHOME 'powershell.exe'
-$link.Arguments = '-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand ${encoded(launcher)}'
+    : `$link.TargetPath = ${psQuote(node)}
+$link.Arguments = ${psQuote(windowsArguments(paths, node, args))}
 $link.WorkingDirectory = ${psQuote(paths.root)}
 $link.Description = '${ID} managed startup'
 $link.WindowStyle = 7
@@ -144,13 +140,7 @@ function runWindowsScript(script) {
       "v1.0",
       "powershell.exe",
     ),
-    [
-      "-NoLogo",
-      "-NoProfile",
-      "-NonInteractive",
-      "-EncodedCommand",
-      encoded(script),
-    ],
+    ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script],
     { windowsHide: true, stdio: "pipe" },
   );
 }
@@ -320,7 +310,7 @@ export async function uninstall() {
       );
     } catch {}
   if (paths.platform === "win32") {
-    runWindowsScript(windowsShortcut(paths, "", true));
+    runWindowsScript(windowsShortcut(paths, "", [], true));
     removeLegacyWindowsStartup(paths);
   }
   if (

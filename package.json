@@ -1,6 +1,6 @@
 {
   "name": "codex-discord-rpc",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Discord Rich Presence for Codex with animated companions, live activity, model, effort and private-by-default Git totals.",
   "type": "module",
   "bin": {
@@ -19,7 +19,8 @@
     "src",
     "README.md",
     "LICENSE",
-    "THIRD_PARTY.md"
+    "THIRD_PARTY.md",
+    "SECURITY.md"
   ],
   "license": "MIT",
   "repository": {
