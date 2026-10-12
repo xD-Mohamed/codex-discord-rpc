@@ -1,3 +1,4 @@
+import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -5,6 +6,7 @@ import {
   startupContents,
   windowsLauncher,
   windowsShortcut,
+  persistentArgs,
 } from "../src/install.js";
 test("Windows autostart runs a quoted persistent installation hidden, not an npx cache", () => {
   const paths = installPaths(
@@ -85,4 +87,22 @@ test("Windows uninstall checks shortcut ownership before removal", () => {
     script.indexOf("$link.Description -ne") < script.indexOf("Remove-Item"),
   );
   assert.doesNotMatch(script, /\$link.Save|Start-Process/);
+});
+
+test("installation persists Codex home independently of the login environment and cwd", () => {
+  const cwd = process.cwd();
+  const args = ["--hide-project", "--codex-home", "custom-codex"];
+  assert.deepEqual(persistentArgs(args, { CODEX_HOME: "ignored" }, cwd), [
+    "--hide-project",
+    "--codex-home",
+    path.resolve(cwd, "custom-codex"),
+  ]);
+  assert.equal(args[2], "custom-codex");
+  assert.deepEqual(persistentArgs([], { CODEX_HOME: "env-codex" }, cwd), [
+    "--codex-home",
+    path.resolve(cwd, "env-codex"),
+  ]);
+  assert.deepEqual(persistentArgs(["--hide-project"], {}, cwd), [
+    "--hide-project",
+  ]);
 });

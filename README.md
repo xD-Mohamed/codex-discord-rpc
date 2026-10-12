@@ -104,7 +104,7 @@ npx --yes github:xD-Mohamed/codex-discord-rpc stop
 npx --yes github:xD-Mohamed/codex-discord-rpc uninstall
 ```
 
-Reinstalling without flags preserves existing options. The tiny remembered-pet preference is retained on uninstall. Other Codex settings and projects are never modified.
+Reinstalling without flags preserves existing options. Installation saves an explicit `--codex-home` or the current `CODEX_HOME` as an absolute path, so login startup does not depend on your terminal environment or working directory. The tiny remembered-pet preference is retained on uninstall. Other Codex settings and projects are never modified.
 
 ## Compatibility
 

@@ -215,6 +215,17 @@ export async function startInstalled(paths = installPaths()) {
     "Background startup was not confirmed. Try foreground mode to inspect the diagnostic.",
   );
 }
+export function persistentArgs(args, env = process.env, cwd = process.cwd()) {
+  const saved = [...args];
+  const index = saved.indexOf("--codex-home");
+  if (index >= 0) {
+    if (!saved[index + 1]) throw new Error("Missing --codex-home path.");
+    saved[index + 1] = path.resolve(cwd, saved[index + 1]);
+  } else if (env.CODEX_HOME) {
+    saved.push("--codex-home", path.resolve(cwd, env.CODEX_HOME));
+  }
+  return saved;
+}
 export async function install(args = []) {
   const paths = installPaths(),
     source = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -241,6 +252,7 @@ export async function install(args = []) {
     throw new Error(
       "An unrelated startup file already exists at the target path.",
     );
+  args = persistentArgs(args);
   await stopIfRunning();
   await awaitStopped();
   mkdirSync(path.join(paths.root, "src"), { recursive: true });
