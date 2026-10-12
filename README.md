@@ -116,9 +116,9 @@ Reinstalling without flags preserves existing options. The tiny remembered-pet p
 
 All three work with the default `~/.codex` home or your `CODEX_HOME`. Use `--codex-home` for a different location. Remote/SSH, Codex Cloud and WSL-hosted sessions need their data and Discord IPC to be accessible in the same environment; automatic remote bridging is not included.
 
-Windows startup uses a hidden launcher in the user's Startup folder. macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
+Windows startup uses a Startup-folder shortcut that launches the runtime hidden through Windows PowerShell, without requiring VBScript. Updating replaces the old managed VBS launcher. Startup occurs after signing in to your Windows account, not before login. If Discord opens later, the runtime retries automatically (up to 30 seconds between retries). macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
 
-**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. macOS/Linux startup has not been tested on real machines yet.
+**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. The new Windows shortcut and macOS/Linux startup have format tests only; a real Windows reboot has not yet been verified for the shortcut.
 
 ## Privacy
 
@@ -139,7 +139,7 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 - **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
 - **Duplicate instance warning:** one publisher is enough for all Codex windows. Use `stop`, then `start`.
 - **Another presence tool is running:** stop it first to avoid competing cards.
-- **Automatic startup fails:** try foreground mode for a diagnostic. Windows needs Windows Script Host enabled; managed devices may block login launchers.
+- **Automatic startup fails:** try foreground mode for a diagnostic. On Windows, check Settings → Apps → Startup and make sure Codex Discord RPC is enabled. The launcher requires Windows PowerShell; managed devices may block login launchers. Run `start` to restart an existing installation without reinstalling. After updating from the old VBS launcher, run `install` once to create the new shortcut.
 - **Unknown Codex version:** session schemas are internal and can change. Unsupported records are omitted rather than publishing guessed content.
 
 ## Development
