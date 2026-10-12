@@ -9,7 +9,7 @@ import {
 } from "../src/install.js";
 import { taskName, taskXml } from "../src/windows-task.js";
 import { shortcutDescription } from "../src/windows-shortcut.js";
-test("Windows login task starts Node directly as the interactive user", () => {
+test("Windows login task uses a GUI launcher in the interactive session", () => {
   const paths = installPaths(
     "win32",
     {},
@@ -20,13 +20,23 @@ test("Windows login task starts Node directly as the interactive user", () => {
     "--codex-home",
     "C:\\Codex & data\\",
   ]);
-  const xml = taskXml(paths.root, node, args, "S-1-5-21-123-1000");
+  const launcher = path.win32.join(
+    paths.root,
+    "codex-rpc-launcher-0123456789abcdef.exe",
+  );
+  const xml = taskXml(
+    paths.root,
+    launcher,
+    '"' + node + '" ' + args,
+    "S-1-5-21-123-1000",
+  );
   assert.match(paths.root, /Programs\\Codex Discord RPC$/);
   assert.match(xml, /<LogonTrigger>/);
   assert.match(xml, /<LogonType>InteractiveToken<\/LogonType>/);
   assert.match(xml, /<RunLevel>LeastPrivilege<\/RunLevel>/);
   assert.match(xml, /<ExecutionTimeLimit>PT0S<\/ExecutionTimeLimit>/);
-  assert.match(xml, /<Command>C:\\Program Files\\nodejs\\node.exe<\/Command>/);
+  assert.match(xml, /codex-rpc-launcher-0123456789abcdef.exe<\/Command>/);
+  assert.ok(xml.includes("&quot;C:\\Program Files\\nodejs\\node.exe&quot;"));
   assert.ok(xml.includes("محمد O&apos;Brien $user %data%"));
   assert.ok(xml.includes("Codex &amp; data"));
   assert.ok(args.includes('"C:\\Codex & data\\\\"'));

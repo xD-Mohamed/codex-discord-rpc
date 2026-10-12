@@ -7,10 +7,12 @@ import {
   writeFileSync,
   readFileSync,
   existsSync,
+  realpathSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { launcherPattern } from "../src/windows-launcher.js";
 import { install, installPaths, uninstall } from "../src/install.js";
 import { taskName, uninstallTask } from "../src/windows-task.js";
 import { instanceStatus, stopInstance, waitForStop } from "../src/instance.js";
@@ -65,6 +67,73 @@ test(
       );
       await install();
       assert.equal(await instanceStatus(), true);
+      const record = JSON.parse(
+        readFileSync(path.join(paths.root, "install-record.json")),
+      );
+      const launcher = path.join(
+        paths.root,
+        record.files.find((f) => launcherPattern.test(f)),
+      );
+      const binary = readFileSync(launcher);
+      const peOffset = binary.readUInt32LE(0x3c);
+      assert.equal(
+        binary.readUInt16LE(peOffset + 24 + 68),
+        2,
+        "launcher must be GUI, not console",
+      );
+      const probeSource = path.join(root, "console-probe.cs");
+      const probeExe = path.join(root, "console-probe.exe");
+      const probeResult = path.join(root, "console-probe.txt");
+      writeFileSync(
+        probeSource,
+        `using System; using System.IO; using System.Runtime.InteropServices;
+class Probe {
+ [DllImport("kernel32.dll")] static extern IntPtr GetConsoleWindow();
+ static int Main(string[] args) {
+  File.WriteAllLines(args[0], new[]{GetConsoleWindow().ToInt64().ToString(), args[1], Environment.CurrentDirectory});
+  for(int i=0;i<100;i++){Console.WriteLine(new string('x',1000));Console.Error.WriteLine(new string('y',1000));}
+  return 17;
+ }
+}`,
+      );
+      const compiler = ["Framework64", "Framework"]
+        .map((f) =>
+          path.join(
+            process.env.SystemRoot,
+            "Microsoft.NET",
+            f,
+            "v4.0.30319",
+            "csc.exe",
+          ),
+        )
+        .find(existsSync);
+      execFileSync(
+        compiler,
+        ["/nologo", "/target:exe", `/out:${probeExe}`, probeSource],
+        { windowsHide: true },
+      );
+      const quoted = 'محمد "quoted" trailing\\';
+      const probe = spawnSync(launcher, [probeExe, probeResult, quoted], {
+        windowsHide: true,
+        timeout: 10000,
+      });
+      assert.equal(
+        probe.status,
+        17,
+        "launcher must drain output and preserve the exit code",
+      );
+      const [consoleWindow, receivedArgument, workingDirectory] = readFileSync(
+        probeResult,
+        "utf8",
+      )
+        .trimEnd()
+        .split(/\r?\n/);
+      assert.deepEqual([consoleWindow, receivedArgument], ["0", quoted]);
+      // .NET expands Windows short (8.3) directory aliases used by hosted CI.
+      assert.equal(
+        realpathSync.native(workingDirectory).toLowerCase(),
+        realpathSync.native(paths.root).toLowerCase(),
+      );
       assert.equal(existsSync(paths.startup), false);
       assert.equal(existsSync(legacy), false);
       assert.equal(existsSync(oldShortcut), false);
