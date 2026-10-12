@@ -7,6 +7,7 @@ import {
   writeFileSync,
   readFileSync,
   existsSync,
+  realpathSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -121,9 +122,17 @@ class Probe {
         17,
         "launcher must drain output and preserve the exit code",
       );
-      assert.deepEqual(
-        readFileSync(probeResult, "utf8").trimEnd().split(/\r?\n/),
-        ["0", quoted, paths.root],
+      const [consoleWindow, receivedArgument, workingDirectory] = readFileSync(
+        probeResult,
+        "utf8",
+      )
+        .trimEnd()
+        .split(/\r?\n/);
+      assert.deepEqual([consoleWindow, receivedArgument], ["0", quoted]);
+      // .NET expands Windows short (8.3) directory aliases used by hosted CI.
+      assert.equal(
+        realpathSync.native(workingDirectory).toLowerCase(),
+        realpathSync.native(paths.root).toLowerCase(),
       );
       assert.equal(existsSync(paths.startup), false);
       assert.equal(existsSync(legacy), false);
