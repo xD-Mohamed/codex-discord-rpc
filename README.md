@@ -134,6 +134,14 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 
 ## Troubleshooting
 
+- **`TAR_ENTRY_ERROR EPERM` followed by “not recognized”:** npm could not write the downloaded package into its cache, before the project installer ran. Check antivirus notifications for a matching block. If none is recorded, retry using a separate npm cache without changing permissions or disabling protection:
+
+  ```powershell
+  npx.cmd --yes --cache "$env:LOCALAPPDATA\npm-cache-codex-rpc" github:xD-Mohamed/codex-discord-rpc#main install
+  ```
+
+  This tests whether the old cache directory is the problem; it does not repair antivirus blocks or guarantee installation. If it fails too, retain the full npm error and antivirus event details. Do not run as administrator, add an exclusion, or restore quarantined files merely to force installation.
+
 - **No activity:** open Discord desktop and Codex (or initialize the Codex extension/CLI backend), then inspect `--dry-run --once`. Process detection recognizes standard installations. If OS process inspection is blocked, fresh task events can still appear but persistent Idle cannot be confirmed.
 - **Idle after work:** expected while Codex remains open. New work replaces Idle automatically. After ten minutes without new task events, stale work is also downgraded to Idle rather than displayed as Thinking indefinitely.
 - **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
