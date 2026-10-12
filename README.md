@@ -116,9 +116,12 @@ Reinstalling without flags preserves existing options. Installation saves an exp
 
 All three work with the default `~/.codex` home or your `CODEX_HOME`. Use `--codex-home` for a different location. Remote/SSH, Codex Cloud and WSL-hosted sessions need their data and Discord IPC to be accessible in the same environment; automatic remote bridging is not included.
 
-Windows startup uses a standard Startup-folder shortcut pointing directly to Node.js with readable arguments. It starts minimized; a console/taskbar entry may remain visible. Login startup does not run a PowerShell wrapper or encoded commands. Windows PowerShell is used during installation/removal to manage the Unicode shortcut, and for read-only process detection. Updating replaces the old managed VBS launcher. Startup occurs after signing in to your Windows account, not before login. If Discord opens later, the runtime retries automatically (up to 30 seconds between retries). macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. No administrator access is required. Node must remain installed at its recorded path; reinstall after moving it.
+Windows 0.3.5 uses a per-user **Task Scheduler login task** that runs Node directly. There is no Startup-folder launcher, PowerShell wrapper, VBS, or runtime C# compilation. The task uses your interactive Windows account with ordinary privileges, starts at login, allows manual start, and has no execution time limit. The running Node helper follows Codex activity; it does not modify Codex itself. If Discord opens later, it reconnects automatically. macOS uses a user LaunchAgent; Linux uses XDG desktop autostart. Node must remain installed at its recorded path; reinstall after moving it.
 
-**Verification:** live Windows Discord rendering and Desktop activity; real CLI/VS Code/Desktop transcript replay; automated lifecycle, protocol, privacy and installer-format tests. GitHub Actions tests Windows and Linux on Node 22.18 and 24. The Windows integration test installs, migrates the old launcher, preserves options, stops the runtime, launches the actual Startup shortcut from a Unicode path, and uninstalls. A full interactive Windows reboot and real macOS/Linux login startup are not covered by these tests.
+Windows files live in `%LOCALAPPDATA%\Programs\Codex Discord RPC`. The first upgrade reads saved options and the remembered pet from the previous `%LOCALAPPDATA%\CodexDiscordRPC` installation, leaving its runtime and unrelated files untouched. Recognized old login launchers are removed. Reinstallation updates the same task and keeps current preferences. The task name is `CodexDiscordRPC-` followed by a stable installation identifier; `uninstall` removes only this managed task and the recorded current runtime files. The old runtime and remembered pet are retained. No antivirus settings or exclusions are changed.
+
+**Verification:** Windows integration tests cover migration, update, running the real login task after stopping the process, and uninstall, including Unicode paths. CI covers Windows and Linux on Node 22.18 and 24. A full interactive Windows reboot and real macOS/Linux login startup are not covered.
+
 
 ## Privacy
 
@@ -147,7 +150,7 @@ The reader extracts local metadata from SQLite or session JSONL. Session bodies 
 - **Git clean:** changes were committed or there are no tracked text changes. It is not a frozen counter.
 - **Duplicate instance warning:** one publisher is enough for all Codex windows. Use `stop`, then `start`.
 - **Another presence tool is running:** stop it first to avoid competing cards.
-- **Automatic startup fails:** try foreground mode for a diagnostic. On Windows, check Settings → Apps → Startup and make sure Codex Discord RPC is enabled. Installation requires Windows PowerShell; managed devices may block login launchers. Run `start` to restart an existing installation without reinstalling. After updating from an older launcher, run `install` once to create the new shortcut.
+- **Automatic startup fails:** try foreground mode for a diagnostic. On Windows, check Task Scheduler for the `CodexDiscordRPC-…` task and make sure it is enabled. Managed devices may block creation of user login tasks. Run `start` to restart an existing installation without reinstalling. After updating from an older launcher, run `install` once to create the login task.
 - **Unknown Codex version:** session schemas are internal and can change. Unsupported records are omitted rather than publishing guessed content.
 
 ## Development
@@ -167,4 +170,4 @@ This is an unofficial community integration, not an OpenAI or Discord product.
 
 ### Antivirus notices
 
-If an antivirus flags a file, keep protection enabled and check the exact detection name, file path, and hash. Do not assume a false positive or add an exclusion. Version 0.3.4 removes the encoded, hidden PowerShell login wrapper used by 0.3.3; the shortcut now starts Node directly. This does not guarantee approval by any antivirus vendor. See [SECURITY.md](SECURITY.md) for reviewed behavior and limitations.
+If an antivirus flags a file, keep protection enabled and check the exact detection name, file path, and hash. Do not assume a false positive or add an exclusion. Version 0.3.5 uses Task Scheduler to start Node directly and no longer invokes a script host to create startup shortcuts. This does not guarantee approval by any antivirus vendor. See [SECURITY.md](SECURITY.md) for reviewed behavior and limitations.

@@ -1,4 +1,5 @@
-import { shortcutType } from "./windows-shortcut.js";
+import { shortcutDescription } from "./windows-shortcut.js";
+import { installTask, uninstallTask } from "./windows-task.js";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +29,11 @@ export function installPaths(
       platform,
       root: p.join(
         env.LOCALAPPDATA || p.join(home, "AppData", "Local"),
+        "Programs",
+        "Codex Discord RPC",
+      ),
+      legacyRoot: p.join(
+        env.LOCALAPPDATA || p.join(home, "AppData", "Local"),
         "CodexDiscordRPC",
       ),
       startup: p.join(
@@ -37,7 +43,7 @@ export function installPaths(
         "Start Menu",
         "Programs",
         "Startup",
-        "Codex Discord RPC.lnk",
+        "Codex RPC.lnk",
       ),
     };
   if (platform === "darwin")
@@ -80,7 +86,7 @@ export function startupContents(paths, node, args = []) {
       ...args,
     ];
   if (paths.platform === "win32") {
-    return windowsShortcut(paths, node, args);
+    throw new Error("Windows uses a managed login task, not a startup file.");
   }
   if (paths.platform === "darwin")
     return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>Label</key><string>io.github.xd-mohamed.${ID}</string><key>ProgramArguments</key><array>${argv.map((x) => `<string>${xml(x)}</string>`).join("")}</array><key>RunAtLoad</key><true/></dict></plist>\n`;
@@ -95,7 +101,6 @@ export function startupContents(paths, node, args = []) {
     '"';
   return `[Desktop Entry]\nType=Application\nName=Codex Discord RPC\nComment=${ID} managed startup\nExec=${argv.map(quote).join(" ")}\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`;
 }
-const psQuote = (value) => "'" + value.replaceAll("'", "''") + "'";
 export function windowsArguments(paths, node, args = []) {
   const argv = [
     "--disable-warning=ExperimentalWarning",
@@ -104,57 +109,34 @@ export function windowsArguments(paths, node, args = []) {
   ];
   if ([node, ...argv].some((x) => /["\r\n]/.test(x)))
     throw new Error("Unsupported quote in startup path.");
-  // The shortcut passes these arguments directly to Node using Windows argv rules.
+  // Task Scheduler passes these arguments directly to Node using Windows argv rules.
   const command = argv
     .map((x) => '"' + x.replace(/(\\+)$/g, "$1$1") + '"')
     .join(" ");
   return command;
 }
-export function windowsShortcut(paths, node, args = [], remove = false) {
-  return `$ErrorActionPreference = 'Stop'
-$file = ${psQuote(paths.startup)}
-${shortcutType}
-$link = New-Object CodexStartupShortcut
-if (Test-Path -LiteralPath $file) { $link.Load($file) }
-if ((Test-Path -LiteralPath $file) -and $link.Description -ne '${ID} managed startup') {
-  throw 'An unrelated startup shortcut already exists at the target path.'
-}
-${
-  remove
-    ? `if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file }`
-    : `$link.TargetPath = ${psQuote(node)}
-$link.Arguments = ${psQuote(windowsArguments(paths, node, args))}
-$link.WorkingDirectory = ${psQuote(paths.root)}
-$link.Description = '${ID} managed startup'
-$link.WindowStyle = 7
-$link.Save($file)`
-}
-`;
-}
-function runWindowsScript(script) {
-  execFileSync(
-    path.win32.join(
-      process.env.SystemRoot || "C:\\Windows",
-      "System32",
-      "WindowsPowerShell",
-      "v1.0",
-      "powershell.exe",
-    ),
-    ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script],
-    { windowsHide: true, stdio: "pipe" },
-  );
-}
 function removeLegacyWindowsStartup(paths) {
-  const legacy = path.win32.join(
-    path.win32.dirname(paths.startup),
+  for (const name of [
     "Codex Discord RPC.vbs",
-  );
-  rejectLink(legacy);
-  if (
-    existsSync(legacy) &&
-    readFileSync(legacy, "utf8").startsWith(`' ${ID} managed startup`)
-  )
-    rmSync(legacy);
+    "Codex Discord RPC.lnk",
+    "Codex Discord RPC (Node).lnk",
+  ]) {
+    const file = path.win32.join(path.win32.dirname(paths.startup), name);
+    if (!existsSync(file)) continue;
+    if (lstatSync(file).isSymbolicLink()) continue;
+    const bytes = readFileSync(file);
+    let managed;
+    if (name.endsWith(".vbs"))
+      managed = bytes.toString("utf8").startsWith(`' ${ID} managed startup`);
+    else {
+      try {
+        managed = shortcutDescription(bytes) === `${ID} managed startup`;
+      } catch {
+        continue;
+      } // Unknown legacy files belong to the user.
+    }
+    if (managed) rmSync(file);
+  }
 }
 function rejectLink(file) {
   if (existsSync(file) && lstatSync(file).isSymbolicLink())
@@ -226,16 +208,25 @@ export async function install(args = []) {
   rejectLink(paths.startup);
   const previousRecord = path.join(paths.root, "install-record.json");
   rejectLink(previousRecord);
-  if (existsSync(previousRecord)) {
-    const previous = JSON.parse(readFileSync(previousRecord, "utf8"));
-    if (previous.id !== ID)
-      throw new Error("Installation directory belongs to another application.");
-    if (args.length === 0 && Array.isArray(previous.args)) args = previous.args;
-  } else if (
+  const hasRecord = existsSync(previousRecord);
+  if (
+    !hasRecord &&
     existsSync(paths.root) &&
     readdirSync(paths.root).some((name) => name !== "state")
   )
     throw new Error("Installation directory contains unrelated files.");
+  // Leave old runtime files untouched; only import the existing preferences.
+  let settingsRoot =
+    !hasRecord && paths.legacyRoot ? paths.legacyRoot : paths.root;
+  rejectLink(settingsRoot);
+  const settingsRecord = path.join(settingsRoot, "install-record.json");
+  rejectLink(settingsRecord);
+  if (existsSync(settingsRecord)) {
+    const previous = JSON.parse(readFileSync(settingsRecord, "utf8"));
+    if (previous.id !== ID)
+      throw new Error("Installation directory belongs to another application.");
+    if (args.length === 0 && Array.isArray(previous.args)) args = previous.args;
+  } else settingsRoot = paths.root;
   if (
     paths.platform !== "win32" &&
     existsSync(paths.startup) &&
@@ -261,12 +252,27 @@ export async function install(args = []) {
     if (path.resolve(source) !== path.resolve(paths.root))
       copyFileSync(path.join(source, f), target);
   }
+  if (settingsRoot !== paths.root) {
+    const oldState = path.join(settingsRoot, "state"),
+      newState = path.join(paths.root, "state");
+    const oldPet = path.join(oldState, "pet.json"),
+      newPet = path.join(newState, "pet.json");
+    for (const file of [oldState, newState, oldPet, newPet]) rejectLink(file);
+    if (existsSync(oldPet) && !existsSync(newPet)) {
+      mkdirSync(newState, { recursive: true });
+      copyFileSync(oldPet, newPet);
+    }
+  }
   writeFileSync(
     path.join(paths.root, "install-record.json"),
     JSON.stringify({ id: ID, node: process.execPath, args, files }, null, 2),
   );
   if (paths.platform === "win32") {
-    runWindowsScript(startupContents(paths, process.execPath, args));
+    installTask(
+      paths.root,
+      process.execPath,
+      windowsArguments(paths, process.execPath, args),
+    );
     removeLegacyWindowsStartup(paths);
   } else {
     writeFileSync(
@@ -310,7 +316,7 @@ export async function uninstall() {
       );
     } catch {}
   if (paths.platform === "win32") {
-    runWindowsScript(windowsShortcut(paths, "", [], true));
+    uninstallTask(paths.root);
     removeLegacyWindowsStartup(paths);
   }
   if (

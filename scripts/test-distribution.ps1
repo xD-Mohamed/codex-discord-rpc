@@ -10,7 +10,7 @@ $env:APPDATA = Join-Path $root 'Roaming'
 $env:LOCALAPPDATA = Join-Path $root 'Local'
 $env:CODEX_HOME = Join-Path $root 'codex'
 $env:npm_config_cache = Join-Path $root 'npm-cache'
-$installed = Join-Path $env:LOCALAPPDATA 'CodexDiscordRPC\src\cli.js'
+$installed = Join-Path $env:LOCALAPPDATA 'Programs\Codex Discord RPC\src\cli.js'
 Push-Location $root
 try {
   # Use the public npx entry point, including download, extraction and bin linking.
@@ -23,7 +23,7 @@ try {
   # Repeat using the same cache, as a user updating an existing installation does.
   & npx.cmd --yes $Package install
   if ($LASTEXITCODE -ne 0) { throw 'Repeated GitHub installation failed' }
-  $record = Get-Content (Join-Path $env:LOCALAPPDATA 'CodexDiscordRPC\install-record.json') -Raw | ConvertFrom-Json
+  $record = Get-Content (Join-Path $env:LOCALAPPDATA 'Programs\Codex Discord RPC\install-record.json') -Raw | ConvertFrom-Json
   if ($record.args -notcontains '--hide-project') { throw 'Update lost saved options' }
   & npx.cmd --yes $Package stop
   if ($LASTEXITCODE -ne 0) { throw 'Stop from npx failed' }
@@ -39,5 +39,18 @@ try {
   foreach ($key in $previous.Keys) {
     [Environment]::SetEnvironmentVariable($key, $previous[$key], 'Process')
   }
-  Remove-Item -LiteralPath $root -Recurse -Force
+  # The stopped Node process can retain its cwd briefly after releasing IPC.
+  $resolvedRoot = [IO.Path]::GetFullPath($root)
+  $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+  if (!$resolvedRoot.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+      !(Split-Path $resolvedRoot -Leaf).StartsWith('rpc-distribution-')) {
+    throw 'Refusing to clean a path outside the distribution test directory'
+  }
+  for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    try { Remove-Item -LiteralPath $resolvedRoot -Recurse -Force -ErrorAction Stop; break }
+    catch {
+      if ($attempt -eq 19) { throw }
+      Start-Sleep -Milliseconds 250
+    }
+  }
 }
