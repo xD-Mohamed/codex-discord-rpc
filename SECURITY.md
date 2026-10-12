@@ -1,6 +1,6 @@
 # Security behavior and review
 
-Review date: 2026-10-12. Scope: the repository runtime, installer, package scripts, lockfile dependency audit, and distributable file list for 0.3.5. This is a source review and automated testing, not an independent security certification or an antivirus scan of a user's computer.
+Review date: 2026-10-12. Scope: the repository runtime, installer, package scripts, lockfile dependency audit, and distributable file list for 0.3.6. This is a source review and automated testing, not an independent security certification or an antivirus scan of a user's computer.
 
 ## What the program does
 
@@ -11,9 +11,9 @@ Review date: 2026-10-12. Scope: the repository runtime, installer, package scrip
 - Installs JavaScript files into the user's application directory and a login startup entry. It remembers the last pet locally. No administrator rights, Defender exclusions, execution-policy changes, browser extensions, or elevated task privileges are requested.
 - Runtime code contains no HTTP downloader, telemetry client, credential harvesting, or remote code loader. It does not read `auth.json`. Installation through npm/GitHub downloads code; Discord separately fetches public artwork. Runtime npm dependencies: none. Development dependencies are for formatting and artwork generation.
 
-## Windows login integration in 0.3.5
+## Windows login integration in 0.3.6
 
-The installer writes an XML task definition and registers it with Windows schtasks.exe. The login task starts Node directly as the current interactive user with LeastPrivilege. No shortcut-generation PowerShell, runtime C# compilation, encoded commands, VBS, password, or elevated runtime is used. A stable task name and exact description marker protect unrelated tasks from replacement. PowerShell remains only for read-only Codex process detection. Old runtime files are preserved during layout migration. This is not an antivirus approval or an exemption from scanning.
+The installer writes an XML task definition and registers it with Windows schtasks.exe. The login task starts a GUI launcher as the current interactive user with LeastPrivilege. Installation compiles the bundled readable C# launcher with the Windows .NET Framework compiler. The launcher starts Node with CreateNoWindow and UseShellExecute=false, discards background output, and propagates its exit code. No PowerShell startup wrapper, encoded commands, VBS, password, or elevated runtime is used. A stable task name and exact description marker protect unrelated tasks from replacement. PowerShell remains only for read-only Codex process detection. Old runtime files are preserved during layout migration. This is not an antivirus approval or an exemption from scanning.
 
 ## Validation and limits
 

@@ -21,14 +21,14 @@ export function taskName(root) {
       .slice(0, 12)
   );
 }
-export function taskXml(root, node, args, user) {
+export function taskXml(root, launcher, args, user) {
   return `<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
 <RegistrationInfo><Description>${MARKER}</Description></RegistrationInfo>
 <Triggers><LogonTrigger><Enabled>true</Enabled><UserId>${escapeXml(user)}</UserId></LogonTrigger></Triggers>
 <Principals><Principal id="User"><UserId>${escapeXml(user)}</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
 <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><StartWhenAvailable>true</StartWhenAvailable><AllowStartOnDemand>true</AllowStartOnDemand><Enabled>true</Enabled><ExecutionTimeLimit>PT0S</ExecutionTimeLimit></Settings>
-<Actions Context="User"><Exec><Command>${escapeXml(node)}</Command><Arguments>${escapeXml(args)}</Arguments><WorkingDirectory>${escapeXml(root)}</WorkingDirectory></Exec></Actions>
+<Actions Context="User"><Exec><Command>${escapeXml(launcher)}</Command><Arguments>${escapeXml(args)}</Arguments><WorkingDirectory>${escapeXml(root)}</WorkingDirectory></Exec></Actions>
 </Task>`;
 }
 function run(args) {

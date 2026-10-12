@@ -1,6 +1,8 @@
 import { shortcutDescription } from "./windows-shortcut.js";
 import { installTask, uninstallTask } from "./windows-task.js";
+import { buildLauncher, launcherPattern } from "./windows-launcher.js";
 import { homedir } from "node:os";
+import { rm as removeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -220,11 +222,14 @@ export async function install(args = []) {
     !hasRecord && paths.legacyRoot ? paths.legacyRoot : paths.root;
   rejectLink(settingsRoot);
   const settingsRecord = path.join(settingsRoot, "install-record.json");
+  let previousLaunchers = [];
   rejectLink(settingsRecord);
   if (existsSync(settingsRecord)) {
     const previous = JSON.parse(readFileSync(settingsRecord, "utf8"));
     if (previous.id !== ID)
       throw new Error("Installation directory belongs to another application.");
+    if (settingsRoot === paths.root && Array.isArray(previous.files))
+      previousLaunchers = previous.files.filter((f) => launcherPattern.test(f));
     if (args.length === 0 && Array.isArray(previous.args)) args = previous.args;
   } else settingsRoot = paths.root;
   if (
@@ -243,7 +248,11 @@ export async function install(args = []) {
   const files = [
     "package.json",
     ...readdirSync(path.join(source, "src"))
-      .filter((f) => f.endsWith(".js"))
+      .filter(
+        (f) =>
+          f.endsWith(".js") ||
+          (paths.platform === "win32" && f === "windows-launcher.cs"),
+      )
       .map((f) => `src/${f}`),
   ];
   for (const f of files) {
@@ -263,6 +272,11 @@ export async function install(args = []) {
       copyFileSync(oldPet, newPet);
     }
   }
+  let launcher;
+  if (paths.platform === "win32") {
+    launcher = buildLauncher(paths.root);
+    files.push(...new Set([...previousLaunchers, launcher]));
+  }
   writeFileSync(
     path.join(paths.root, "install-record.json"),
     JSON.stringify({ id: ID, node: process.execPath, args, files }, null, 2),
@@ -270,8 +284,11 @@ export async function install(args = []) {
   if (paths.platform === "win32") {
     installTask(
       paths.root,
-      process.execPath,
-      windowsArguments(paths, process.execPath, args),
+      path.join(paths.root, launcher),
+      '"' +
+        process.execPath +
+        '" ' +
+        windowsArguments(paths, process.execPath, args),
     );
     removeLegacyWindowsStartup(paths);
   } else {
@@ -327,12 +344,31 @@ export async function uninstall() {
     rmSync(paths.startup);
   // Delete only files recorded by this installer, never recursively delete a directory.
   for (const f of record.files || []) {
-    if (f !== "package.json" && !/^src\/[a-z-]+\.js$/.test(f)) continue;
+    if (
+      f !== "package.json" &&
+      f !== "src/windows-launcher.cs" &&
+      !launcherPattern.test(f) &&
+      !/^src\/[a-z-]+\.js$/.test(f)
+    )
+      continue;
     const target = path.resolve(paths.root, f);
     if (!target.startsWith(path.resolve(paths.root) + path.sep))
       throw new Error("Invalid managed file path.");
     rejectLink(target);
-    rmSync(target, { force: true });
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await removeFile(target, { force: true });
+        break;
+      } catch (error) {
+        if (
+          !launcherPattern.test(f) ||
+          !["EPERM", "EBUSY", "EACCES"].includes(error.code) ||
+          attempt >= 50
+        )
+          throw error;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
   }
   rmSync(recordPath);
   try {
