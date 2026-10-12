@@ -39,5 +39,18 @@ try {
   foreach ($key in $previous.Keys) {
     [Environment]::SetEnvironmentVariable($key, $previous[$key], 'Process')
   }
-  Remove-Item -LiteralPath $root -Recurse -Force
+  # The stopped Node process can retain its cwd briefly after releasing IPC.
+  $resolvedRoot = [IO.Path]::GetFullPath($root)
+  $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+  if (!$resolvedRoot.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -or
+      !(Split-Path $resolvedRoot -Leaf).StartsWith('rpc-distribution-')) {
+    throw 'Refusing to clean a path outside the distribution test directory'
+  }
+  for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    try { Remove-Item -LiteralPath $resolvedRoot -Recurse -Force -ErrorAction Stop; break }
+    catch {
+      if ($attempt -eq 19) { throw }
+      Start-Sleep -Milliseconds 250
+    }
+  }
 }
